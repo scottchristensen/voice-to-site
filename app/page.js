@@ -36,80 +36,55 @@ export default function Home() {
           setIsCallActive(false)
         })
 
+        // Helper to extract URL from any string
+        const extractUrl = (text) => {
+          if (!text || typeof text !== 'string') return null
+          // Match preview URLs with UUID pattern
+          const urlMatch = text.match(/https?:\/\/[^\s"']+\/preview\/[a-f0-9-]+/i)
+          if (urlMatch) {
+            return urlMatch[0].replace(/[.,!?]$/, '') // Remove trailing punctuation
+          }
+          return null
+        }
+
+        // Track if we've already shown the modal
+        let urlFound = false
+
         // Listen for messages to capture the preview URL
         vapiInstance.on('message', (message) => {
-          console.log('Vapi message:', message.type, message)
+          if (urlFound) return // Don't process more if we already found URL
 
-          // Helper to extract URL from any string
-          const extractUrl = (text) => {
-            if (!text || typeof text !== 'string') return null
-            const urlMatch = text.match(/https?:\/\/[^\s]+\/preview\/[a-f0-9-]+/i)
-            if (urlMatch) {
-              return urlMatch[0].replace(/[.,!?]$/, '') // Remove trailing punctuation
-            }
-            return null
+          console.log('Vapi message:', message.type, JSON.stringify(message, null, 2))
+
+          // ULTIMATE FALLBACK: Stringify the entire message and search for URL
+          const fullMessageStr = JSON.stringify(message)
+          const urlFromFull = extractUrl(fullMessageStr)
+          if (urlFromFull) {
+            console.log('Found preview URL in full message:', urlFromFull)
+            urlFound = true
+            setPreviewUrl(urlFromFull)
+            setShowModal(true)
+            return
           }
+        })
 
-          // Check various message types and structures for tool results
-          // Vapi may use different formats: tool-call-result, tool_call_result, function-call, etc.
-          const messageType = message.type || ''
-          const isToolResult = messageType.includes('tool') ||
-                              messageType.includes('function') ||
-                              message.functionCall ||
-                              message.toolCall ||
-                              message.toolCallResult
-
-          if (isToolResult) {
-            // Try multiple possible result locations
-            const possibleResults = [
-              message.result,
-              message.output,
-              message.toolCallResult?.result,
-              message.toolCallResult?.message,
-              message.functionCallResult?.result,
-              message.functionCallResult?.message,
-              message.content,
-              message.text,
-              // For nested tool results
-              message.toolCallResult && JSON.stringify(message.toolCallResult),
-              message.results?.[0]?.result,
-            ]
-
-            for (const result of possibleResults) {
-              const url = extractUrl(result)
-              if (url) {
-                console.log('Found preview URL in tool result:', url)
-                setPreviewUrl(url)
-                setShowModal(true)
-                return
-              }
-            }
+        // Also listen for speech-update which contains what's being said
+        vapiInstance.on('speech-update', (update) => {
+          if (urlFound) return
+          console.log('Speech update:', update)
+          const text = update?.text || update?.transcript || ''
+          const url = extractUrl(text)
+          if (url) {
+            console.log('Found URL in speech:', url)
+            urlFound = true
+            setPreviewUrl(url)
+            setShowModal(true)
           }
+        })
 
-          // Check transcript messages (what the assistant says)
-          if (messageType === 'transcript' || message.transcript) {
-            const transcript = message.transcript || message.text || ''
-            const url = extractUrl(transcript)
-            if (url) {
-              console.log('Found preview URL in transcript:', url)
-              setPreviewUrl(url)
-              setShowModal(true)
-            }
-          }
-
-          // Check conversation-update messages which may contain tool results
-          if (messageType === 'conversation-update' && message.conversation) {
-            const lastMsg = message.conversation[message.conversation.length - 1]
-            if (lastMsg) {
-              const content = lastMsg.content || lastMsg.text || lastMsg.result || ''
-              const url = extractUrl(typeof content === 'string' ? content : JSON.stringify(content))
-              if (url) {
-                console.log('Found preview URL in conversation update:', url)
-                setPreviewUrl(url)
-                setShowModal(true)
-              }
-            }
-          }
+        // Listen for call-end and check conversation
+        vapiInstance.on('call-end', () => {
+          console.log('Call ended, urlFound:', urlFound)
         })
 
         setVapi(vapiInstance)
