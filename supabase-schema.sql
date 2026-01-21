@@ -64,34 +64,32 @@ CREATE TRIGGER update_generated_sites_updated_at
 SELECT 'Table created successfully!' as message;
 
 -- =============================================
--- CLEANUP FUNCTION FOR EXPIRED SITES
--- Run this manually or set up a cron job
+-- ANALYTICS VIEWS (Optional - for insights)
 -- =============================================
 
--- Add expires_at column if it doesn't exist
-ALTER TABLE generated_sites
-ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT (now() + interval '14 days');
+-- View: Sites created per day
+CREATE OR REPLACE VIEW daily_site_stats AS
+SELECT
+  DATE(created_at) as date,
+  COUNT(*) as sites_created,
+  COUNT(CASE WHEN payment_status = 'paid' THEN 1 END) as sites_paid,
+  COUNT(CASE WHEN payment_status = 'unpaid' THEN 1 END) as sites_unpaid
+FROM generated_sites
+GROUP BY DATE(created_at)
+ORDER BY date DESC;
 
--- Function to clean up expired unclaimed sites
-CREATE OR REPLACE FUNCTION cleanup_expired_sites()
-RETURNS INTEGER AS $$
-DECLARE
-  deleted_count INTEGER;
-BEGIN
-  DELETE FROM generated_sites
-  WHERE status = 'preview'
-    AND payment_status = 'unpaid'
-    AND expires_at < now();
+-- View: Industry breakdown
+CREATE OR REPLACE VIEW industry_stats AS
+SELECT
+  industry,
+  COUNT(*) as total,
+  COUNT(CASE WHEN payment_status = 'paid' THEN 1 END) as paid,
+  ROUND(100.0 * COUNT(CASE WHEN payment_status = 'paid' THEN 1 END) / COUNT(*), 1) as conversion_rate
+FROM generated_sites
+WHERE industry IS NOT NULL
+GROUP BY industry
+ORDER BY total DESC;
 
-  GET DIAGNOSTICS deleted_count = ROW_COUNT;
-  RETURN deleted_count;
-END;
-$$ LANGUAGE plpgsql;
-
--- To run cleanup manually:
--- SELECT cleanup_expired_sites();
-
--- To see sites that would be deleted:
--- SELECT id, business_name, created_at, expires_at
--- FROM generated_sites
--- WHERE status = 'preview' AND payment_status = 'unpaid' AND expires_at < now();
+-- Note: Sites are NEVER deleted. The 14-day "expiration" is just
+-- a marketing message shown in the UI to create urgency.
+-- All data is kept for historical analytics.
