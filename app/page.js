@@ -6,6 +6,8 @@ export default function Home() {
   const [isCallActive, setIsCallActive] = useState(false)
   const [callStatus, setCallStatus] = useState('idle') // idle, connecting, connected, ended
   const [vapi, setVapi] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     // Dynamically import Vapi SDK
@@ -18,12 +20,13 @@ export default function Home() {
         vapiInstance.on('call-start', () => {
           setCallStatus('connected')
           setIsCallActive(true)
+          setPreviewUrl(null) // Reset any previous URL
         })
 
         vapiInstance.on('call-end', () => {
           setCallStatus('ended')
           setIsCallActive(false)
-          // Reset after a moment
+          // Reset button after a moment (but keep modal open if URL exists)
           setTimeout(() => setCallStatus('idle'), 3000)
         })
 
@@ -31,6 +34,35 @@ export default function Home() {
           console.error('Vapi error:', error)
           setCallStatus('idle')
           setIsCallActive(false)
+        })
+
+        // Listen for messages to capture the preview URL
+        vapiInstance.on('message', (message) => {
+          console.log('Vapi message:', message)
+
+          // Check for tool call results that contain our preview URL
+          if (message.type === 'tool-call-result' || message.type === 'function-call-result') {
+            const result = message.result || message.output || ''
+            // Extract URL from the result
+            const urlMatch = result.match(/https?:\/\/[^\s]+\/preview\/[^\s]+/)
+            if (urlMatch) {
+              const url = urlMatch[0].replace(/[.,!?]$/, '') // Remove trailing punctuation
+              console.log('Found preview URL:', url)
+              setPreviewUrl(url)
+              setShowModal(true)
+            }
+          }
+
+          // Also check transcript for URL (backup method)
+          if (message.type === 'transcript' && message.transcript) {
+            const urlMatch = message.transcript.match(/https?:\/\/[^\s]+\/preview\/[^\s]+/)
+            if (urlMatch && !previewUrl) {
+              const url = urlMatch[0].replace(/[.,!?]$/, '')
+              console.log('Found preview URL in transcript:', url)
+              setPreviewUrl(url)
+              setShowModal(true)
+            }
+          }
         })
 
         setVapi(vapiInstance)
@@ -46,6 +78,8 @@ export default function Home() {
     if (!vapi) return
 
     setCallStatus('connecting')
+    setPreviewUrl(null)
+    setShowModal(false)
     try {
       await vapi.start(process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID)
     } catch (error) {
@@ -62,6 +96,33 @@ export default function Home() {
 
   return (
     <div style={styles.container}>
+      {/* Success Modal */}
+      {showModal && previewUrl && (
+        <div style={styles.modalOverlay} onClick={() => setShowModal(false)}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalIcon}>🎉</div>
+            <h2 style={styles.modalTitle}>Your Website is Ready!</h2>
+            <p style={styles.modalText}>
+              Sarah created a beautiful website for you. Click below to see it!
+            </p>
+            <a
+              href={previewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.modalButton}
+            >
+              View Your Website
+            </a>
+            <button
+              onClick={() => setShowModal(false)}
+              style={styles.modalClose}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav style={styles.nav}>
         <div style={styles.logo}>VoiceSite</div>
@@ -115,7 +176,7 @@ export default function Home() {
             {callStatus === 'ended' && (
               <>
                 <CheckIcon />
-                Call Ended - Check Your Site!
+                Call Ended
               </>
             )}
           </button>
@@ -124,6 +185,21 @@ export default function Home() {
             <div style={styles.callIndicator}>
               <span style={styles.pulse}></span>
               Speaking with Sarah...
+            </div>
+          )}
+
+          {/* Show link to preview if URL exists but modal is closed */}
+          {previewUrl && !showModal && !isCallActive && (
+            <div style={styles.previewLink}>
+              <span>Your site is ready! </span>
+              <a
+                href={previewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.previewLinkAnchor}
+              >
+                View it here →
+              </a>
             </div>
           )}
 
@@ -292,6 +368,75 @@ const styles = {
     color: '#1a1a2e',
     minHeight: '100vh',
     background: '#ffffff',
+  },
+  // Modal styles
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.7)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  modal: {
+    background: 'white',
+    borderRadius: '20px',
+    padding: '48px',
+    maxWidth: '450px',
+    width: '90%',
+    textAlign: 'center',
+    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.3)',
+  },
+  modalIcon: {
+    fontSize: '64px',
+    marginBottom: '16px',
+  },
+  modalTitle: {
+    fontSize: '28px',
+    fontWeight: '700',
+    marginBottom: '12px',
+    color: '#1a1a2e',
+  },
+  modalText: {
+    color: '#666',
+    marginBottom: '24px',
+    lineHeight: '1.6',
+  },
+  modalButton: {
+    display: 'block',
+    width: '100%',
+    padding: '16px 32px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    textDecoration: 'none',
+    borderRadius: '12px',
+    fontWeight: '600',
+    fontSize: '18px',
+    marginBottom: '12px',
+  },
+  modalClose: {
+    background: 'none',
+    border: 'none',
+    color: '#888',
+    cursor: 'pointer',
+    fontSize: '14px',
+    padding: '8px',
+  },
+  // Preview link (when modal is closed)
+  previewLink: {
+    marginTop: '16px',
+    padding: '12px 20px',
+    background: '#e8f5e9',
+    borderRadius: '8px',
+    color: '#2e7d32',
+  },
+  previewLinkAnchor: {
+    color: '#1b5e20',
+    fontWeight: '600',
   },
   nav: {
     display: 'flex',
