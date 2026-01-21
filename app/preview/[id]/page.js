@@ -1,29 +1,75 @@
+'use client'
+
 import { createClient } from '@supabase/supabase-js'
+import { useState, useEffect } from 'react'
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
+// We need to fetch data on the client side for the countdown to work
+export default function PreviewPage({ params }) {
+  const [site, setSite] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [timeLeft, setTimeLeft] = useState(600) // 10 minutes in seconds
+  const [showClaimModal, setShowClaimModal] = useState(false)
+  const [customSlug, setCustomSlug] = useState('')
+  const [claimType, setClaimType] = useState('free') // 'free' or 'custom'
 
-// Calculate days remaining
-function getDaysRemaining(createdAt) {
-  const created = new Date(createdAt)
-  const expires = new Date(created.getTime() + 14 * 24 * 60 * 60 * 1000) // 14 days
-  const now = new Date()
-  const diff = expires - now
-  return Math.ceil(diff / (1000 * 60 * 60 * 24))
-}
+  // Fetch site data
+  useEffect(() => {
+    async function fetchSite() {
+      const { id } = await params
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_KEY
+      )
 
-export default async function PreviewPage({ params }) {
-  const { id } = await params
+      const { data, error } = await supabase
+        .from('generated_sites')
+        .select('*')
+        .eq('id', id)
+        .single()
 
-  // Fetch the site from database
-  const { data: site, error } = await supabase
-    .from('generated_sites')
-    .select('*')
-    .eq('id', id)
-    .single()
+      if (error) {
+        setError('Site not found')
+      } else {
+        setSite(data)
+        // Calculate time left based on created_at (10 min from creation)
+        const created = new Date(data.created_at)
+        const expiresAt = new Date(created.getTime() + 10 * 60 * 1000)
+        const now = new Date()
+        const remaining = Math.max(0, Math.floor((expiresAt - now) / 1000))
+        setTimeLeft(remaining)
+      }
+      setLoading(false)
+    }
+    fetchSite()
+  }, [params])
+
+  // Countdown timer
+  useEffect(() => {
+    if (timeLeft <= 0 || site?.payment_status === 'paid') return
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => Math.max(0, prev - 1))
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [timeLeft, site?.payment_status])
+
+  // Format time as MM:SS
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  if (loading) {
+    return (
+      <div style={styles.loading}>
+        <div style={styles.spinner}></div>
+        <p>Loading preview...</p>
+      </div>
+    )
+  }
 
   if (error || !site) {
     return (
@@ -37,21 +83,20 @@ export default async function PreviewPage({ params }) {
     )
   }
 
-  const daysRemaining = getDaysRemaining(site.created_at)
-  const isExpired = daysRemaining <= 0 && site.payment_status === 'unpaid'
   const isPaid = site.payment_status === 'paid'
+  const isExpired = timeLeft <= 0 && !isPaid
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voice-to-site.vercel.app'
 
   // Expired site - show blurred preview with urgency CTA
   if (isExpired) {
     return (
       <div style={styles.container}>
-        {/* Expired Overlay */}
         <div style={styles.expiredOverlay}>
           <div style={styles.expiredCard}>
             <div style={styles.expiredIcon}>⏰</div>
             <h1 style={styles.expiredTitle}>Preview Expired</h1>
             <p style={styles.expiredText}>
-              This website preview for <strong>{site.business_name || 'your business'}</strong> has expired.
+              This preview for <strong>{site.business_name || 'your business'}</strong> has expired.
               But don't worry - you can create a new one in minutes!
             </p>
             <a href="/" style={styles.expiredButton}>
@@ -61,62 +106,97 @@ export default async function PreviewPage({ params }) {
               Or claim this exact design before it's gone forever
             </p>
             <div style={styles.expiredActions}>
-              <button style={styles.claimButton}>Claim This Site - $49</button>
+              <button
+                onClick={() => setShowClaimModal(true)}
+                style={styles.claimButtonYellow}
+              >
+                Claim This Site - $49
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Blurred Preview */}
         <iframe
           srcDoc={site.html_code}
           style={styles.blurredIframe}
           title="Website Preview (Expired)"
         />
+
+        {showClaimModal && (
+          <ClaimModal
+            site={site}
+            baseUrl={baseUrl}
+            customSlug={customSlug}
+            setCustomSlug={setCustomSlug}
+            claimType={claimType}
+            setClaimType={setClaimType}
+            onClose={() => setShowClaimModal(false)}
+          />
+        )}
       </div>
     )
   }
 
-  // Active preview - show with countdown urgency
+  // Active preview - show with countdown
   return (
     <div style={styles.container}>
-      {/* Urgency Banner */}
+      {/* Subtle Countdown Banner - only show if not paid */}
       {!isPaid && (
-        <div style={styles.urgencyBanner}>
-          <div style={styles.urgencyLeft}>
-            <span style={styles.timerIcon}>⏱️</span>
-            <span>
-              <strong>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''}</strong> left to claim your site
+        <div style={styles.countdownBanner}>
+          <div style={styles.countdownLeft}>
+            <span style={styles.clockIcon}>⏱</span>
+            <span style={styles.countdownText}>
+              Preview expires in <strong>{formatTime(timeLeft)}</strong>
             </span>
           </div>
-          <div style={styles.urgencyRight}>
-            Claim now before this preview expires!
-          </div>
+          <button
+            onClick={() => setShowClaimModal(true)}
+            style={styles.claimNowButton}
+          >
+            Claim Your Site
+          </button>
         </div>
       )}
 
-      {/* Main Upsell Banner */}
-      <div style={styles.upsellBanner}>
-        <div style={styles.upsellLeft}>
+      {/* Main Banner */}
+      <div style={styles.mainBanner}>
+        <div style={styles.bannerLeft}>
           <strong>
             {isPaid ? '✓ ' : ''}
-            Your website{site.business_name ? ` for ${site.business_name}` : ''}
+            {site.business_name || 'Your Website'}
           </strong>
-          {!isPaid && (
-            <span style={styles.upsellSubtext}>
-              Like what you see? Claim your site!
+          {!isPaid && site.slug && (
+            <span style={styles.slugPreview}>
+              {baseUrl}/s/{site.slug}
             </span>
+          )}
+          {isPaid && site.slug && (
+            <a
+              href={`${baseUrl}/s/${site.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.liveLink}
+            >
+              {baseUrl}/s/{site.slug} →
+            </a>
           )}
         </div>
         {!isPaid && (
-          <div style={styles.upsellButtons}>
-            <button style={styles.exportButton}>
-              Export Code - $49
+          <div style={styles.bannerButtons}>
+            <button
+              onClick={() => { setClaimType('free'); setShowClaimModal(true) }}
+              style={styles.freeButton}
+            >
+              Claim Free
             </button>
-            <button style={styles.hostButton}>
-              Host With Us - $29/mo
+            <button
+              onClick={() => { setClaimType('custom'); setShowClaimModal(true) }}
+              style={styles.upgradeButton}
+            >
+              Custom URL - $29
             </button>
             <button style={styles.premiumButton}>
-              Premium Design - $499+
+              Premium - $499+
             </button>
           </div>
         )}
@@ -128,6 +208,173 @@ export default async function PreviewPage({ params }) {
         style={styles.iframe}
         title="Website Preview"
       />
+
+      {/* Claim Modal */}
+      {showClaimModal && (
+        <ClaimModal
+          site={site}
+          baseUrl={baseUrl}
+          customSlug={customSlug}
+          setCustomSlug={setCustomSlug}
+          claimType={claimType}
+          setClaimType={setClaimType}
+          onClose={() => setShowClaimModal(false)}
+        />
+      )}
+
+      <style jsx global>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// Claim Modal Component
+function ClaimModal({ site, baseUrl, customSlug, setCustomSlug, claimType, setClaimType, onClose }) {
+  const [email, setEmail] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [claimed, setClaimed] = useState(false)
+
+  const handleClaim = async () => {
+    if (!email) return
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch('/api/claim-site', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          siteId: site.id,
+          email,
+          customSlug: claimType === 'custom' ? customSlug : null,
+          claimType
+        })
+      })
+
+      if (response.ok) {
+        setClaimed(true)
+      }
+    } catch (err) {
+      console.error('Claim error:', err)
+    }
+    setIsSubmitting(false)
+  }
+
+  const finalSlug = claimType === 'custom' && customSlug ? customSlug : site.slug
+
+  if (claimed) {
+    return (
+      <div style={styles.modalOverlay} onClick={onClose}>
+        <div style={styles.modal} onClick={e => e.stopPropagation()}>
+          <div style={styles.successIcon}>🎉</div>
+          <h2 style={styles.modalTitle}>Site Claimed!</h2>
+          <p style={styles.modalText}>
+            Your website is now live at:
+          </p>
+          <a
+            href={`${baseUrl}/s/${finalSlug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.liveUrlBox}
+          >
+            {baseUrl}/s/{finalSlug}
+          </a>
+          <p style={styles.modalSubtext}>
+            We've sent a confirmation to {email}
+          </p>
+          <button onClick={onClose} style={styles.doneButton}>
+            Done
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={styles.modalOverlay} onClick={onClose}>
+      <div style={styles.modal} onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} style={styles.closeButton}>×</button>
+
+        <h2 style={styles.modalTitle}>Claim Your Website</h2>
+        <p style={styles.modalText}>
+          Publish your site and get a permanent link to share.
+        </p>
+
+        {/* Plan Toggle */}
+        <div style={styles.planToggle}>
+          <button
+            onClick={() => setClaimType('free')}
+            style={{
+              ...styles.planOption,
+              ...(claimType === 'free' ? styles.planOptionActive : {})
+            }}
+          >
+            <span style={styles.planName}>Free</span>
+            <span style={styles.planPrice}>$0</span>
+          </button>
+          <button
+            onClick={() => setClaimType('custom')}
+            style={{
+              ...styles.planOption,
+              ...(claimType === 'custom' ? styles.planOptionActive : {})
+            }}
+          >
+            <span style={styles.planName}>Custom URL</span>
+            <span style={styles.planPrice}>$29</span>
+          </button>
+        </div>
+
+        {/* URL Preview */}
+        <div style={styles.urlSection}>
+          <label style={styles.urlLabel}>Your site URL:</label>
+          {claimType === 'free' ? (
+            <div style={styles.urlPreviewBox}>
+              {baseUrl}/s/<strong>{site.slug}</strong>
+            </div>
+          ) : (
+            <div style={styles.urlInputWrapper}>
+              <span style={styles.urlPrefix}>{baseUrl}/s/</span>
+              <input
+                type="text"
+                value={customSlug}
+                onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                placeholder="your-custom-name"
+                style={styles.urlInput}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Email Input */}
+        <div style={styles.emailSection}>
+          <label style={styles.urlLabel}>Your email:</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            style={styles.emailInput}
+          />
+        </div>
+
+        {/* Submit Button */}
+        <button
+          onClick={handleClaim}
+          disabled={!email || isSubmitting}
+          style={{
+            ...styles.submitButton,
+            opacity: (!email || isSubmitting) ? 0.6 : 1
+          }}
+        >
+          {isSubmitting ? 'Publishing...' : claimType === 'free' ? 'Publish Free' : 'Publish for $29'}
+        </button>
+
+        <p style={styles.termsText}>
+          By claiming, you agree to our terms of service.
+        </p>
+      </div>
     </div>
   )
 }
@@ -138,6 +385,24 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     position: 'relative',
+  },
+  loading: {
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: 'system-ui',
+    color: '#666',
+    gap: '16px',
+  },
+  spinner: {
+    width: '32px',
+    height: '32px',
+    border: '3px solid #eee',
+    borderTopColor: '#667eea',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
   },
   // Not Found
   notFound: {
@@ -166,6 +431,102 @@ const styles = {
     textDecoration: 'none',
     borderRadius: '6px',
     fontWeight: '600',
+  },
+  // Countdown Banner (subtle, not red)
+  countdownBanner: {
+    background: '#f8f9fa',
+    color: '#555',
+    padding: '10px 24px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontFamily: 'system-ui',
+    fontSize: '14px',
+    borderBottom: '1px solid #eee',
+  },
+  countdownLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  clockIcon: {
+    fontSize: '16px',
+  },
+  countdownText: {
+    color: '#666',
+  },
+  claimNowButton: {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    fontSize: '13px',
+  },
+  // Main Banner
+  mainBanner: {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    padding: '16px 24px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontFamily: 'system-ui',
+    flexWrap: 'wrap',
+    gap: '12px',
+  },
+  bannerLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  slugPreview: {
+    opacity: 0.8,
+    fontSize: '13px',
+  },
+  liveLink: {
+    color: 'white',
+    opacity: 0.9,
+    fontSize: '13px',
+  },
+  bannerButtons: {
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap',
+  },
+  freeButton: {
+    background: 'white',
+    color: '#667eea',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  upgradeButton: {
+    background: 'rgba(255,255,255,0.15)',
+    color: 'white',
+    border: '2px solid white',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  premiumButton: {
+    background: '#ffd700',
+    color: '#333',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  iframe: {
+    flex: 1,
+    border: 'none',
+    width: '100%',
   },
   // Expired State
   expiredOverlay: {
@@ -224,7 +585,7 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
   },
-  claimButton: {
+  claimButtonYellow: {
     padding: '10px 24px',
     background: '#ffd700',
     color: '#333',
@@ -240,86 +601,181 @@ const styles = {
     filter: 'blur(8px)',
     pointerEvents: 'none',
   },
-  // Urgency Banner
-  urgencyBanner: {
-    background: '#ff6b6b',
-    color: 'white',
-    padding: '10px 24px',
+  // Modal
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.6)',
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
     fontFamily: 'system-ui',
-    fontSize: '14px',
-    flexWrap: 'wrap',
-    gap: '8px',
   },
-  urgencyLeft: {
+  modal: {
+    background: 'white',
+    borderRadius: '16px',
+    padding: '32px',
+    maxWidth: '450px',
+    width: '90%',
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: '12px',
+    right: '16px',
+    background: 'none',
+    border: 'none',
+    fontSize: '28px',
+    color: '#999',
+    cursor: 'pointer',
+    lineHeight: 1,
+  },
+  modalTitle: {
+    fontSize: '24px',
+    fontWeight: '700',
+    marginBottom: '8px',
+    color: '#1a1a2e',
+  },
+  modalText: {
+    color: '#666',
+    marginBottom: '24px',
+  },
+  planToggle: {
+    display: 'flex',
+    gap: '12px',
+    marginBottom: '24px',
+  },
+  planOption: {
+    flex: 1,
+    padding: '16px',
+    border: '2px solid #eee',
+    borderRadius: '10px',
+    background: 'white',
+    cursor: 'pointer',
+    textAlign: 'center',
+    transition: 'all 0.2s',
+  },
+  planOptionActive: {
+    borderColor: '#667eea',
+    background: '#f8f7ff',
+  },
+  planName: {
+    display: 'block',
+    fontWeight: '600',
+    marginBottom: '4px',
+    color: '#1a1a2e',
+  },
+  planPrice: {
+    display: 'block',
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#667eea',
+  },
+  urlSection: {
+    marginBottom: '20px',
+  },
+  urlLabel: {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '500',
+    marginBottom: '8px',
+    color: '#555',
+  },
+  urlPreviewBox: {
+    padding: '12px 16px',
+    background: '#f5f5f5',
+    borderRadius: '8px',
+    fontSize: '14px',
+    color: '#666',
+    wordBreak: 'break-all',
+  },
+  urlInputWrapper: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
+    border: '2px solid #eee',
+    borderRadius: '8px',
+    overflow: 'hidden',
   },
-  timerIcon: {
-    fontSize: '18px',
+  urlPrefix: {
+    padding: '12px',
+    background: '#f5f5f5',
+    fontSize: '14px',
+    color: '#888',
+    whiteSpace: 'nowrap',
   },
-  urgencyRight: {
-    opacity: 0.9,
+  urlInput: {
+    flex: 1,
+    padding: '12px',
+    border: 'none',
+    outline: 'none',
+    fontSize: '14px',
   },
-  // Upsell Banner
-  upsellBanner: {
+  emailSection: {
+    marginBottom: '24px',
+  },
+  emailInput: {
+    width: '100%',
+    padding: '12px 16px',
+    border: '2px solid #eee',
+    borderRadius: '8px',
+    fontSize: '14px',
+    outline: 'none',
+    boxSizing: 'border-box',
+  },
+  submitButton: {
+    width: '100%',
+    padding: '14px',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
-    padding: '16px 24px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontFamily: 'system-ui',
-    flexWrap: 'wrap',
-    gap: '12px',
+    border: 'none',
+    borderRadius: '8px',
+    fontWeight: '600',
+    fontSize: '16px',
+    cursor: 'pointer',
   },
-  upsellLeft: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
+  termsText: {
+    marginTop: '16px',
+    fontSize: '12px',
+    color: '#999',
+    textAlign: 'center',
   },
-  upsellSubtext: {
-    opacity: 0.9,
+  // Success state
+  successIcon: {
+    fontSize: '64px',
+    textAlign: 'center',
+    marginBottom: '16px',
+  },
+  liveUrlBox: {
+    display: 'block',
+    padding: '16px',
+    background: '#f0fdf4',
+    border: '1px solid #86efac',
+    borderRadius: '8px',
+    color: '#166534',
+    textDecoration: 'none',
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: '16px',
+    wordBreak: 'break-all',
+  },
+  modalSubtext: {
+    color: '#888',
     fontSize: '14px',
+    textAlign: 'center',
+    marginBottom: '20px',
   },
-  upsellButtons: {
-    display: 'flex',
-    gap: '12px',
-    flexWrap: 'wrap',
-  },
-  exportButton: {
-    background: 'white',
-    color: '#667eea',
-    border: 'none',
-    padding: '10px 20px',
-    borderRadius: '6px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  hostButton: {
-    background: 'rgba(255,255,255,0.2)',
-    color: 'white',
-    border: '2px solid white',
-    padding: '10px 20px',
-    borderRadius: '6px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  premiumButton: {
-    background: '#ffd700',
-    color: '#333',
-    border: 'none',
-    padding: '10px 20px',
-    borderRadius: '6px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  iframe: {
-    flex: 1,
-    border: 'none',
+  doneButton: {
     width: '100%',
+    padding: '12px',
+    background: '#667eea',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontWeight: '600',
+    cursor: 'pointer',
   },
 }

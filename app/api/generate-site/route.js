@@ -10,6 +10,49 @@ const supabase = createClient(
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
+// Generate a URL-friendly slug from business name
+function generateSlug(businessName) {
+  if (!businessName) return null
+
+  // Convert to lowercase, replace spaces/special chars with hyphens
+  let slug = businessName
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-')          // Replace spaces with hyphens
+    .replace(/-+/g, '-')           // Replace multiple hyphens with single
+    .replace(/^-|-$/g, '')         // Remove leading/trailing hyphens
+
+  // Limit length
+  if (slug.length > 30) {
+    slug = slug.substring(0, 30).replace(/-$/, '')
+  }
+
+  return slug || null
+}
+
+// Get unique slug (add random suffix if needed)
+async function getUniqueSlug(baseSlug) {
+  if (!baseSlug) {
+    // Generate random slug if no business name
+    return `site-${Math.random().toString(36).substring(2, 8)}`
+  }
+
+  // Check if slug exists
+  const { data: existing } = await supabase
+    .from('generated_sites')
+    .select('slug')
+    .eq('slug', baseSlug)
+    .single()
+
+  if (!existing) {
+    return baseSlug
+  }
+
+  // Add random suffix if slug is taken
+  return `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`
+}
+
 export async function POST(request) {
   try {
     const body = await request.json()
@@ -92,6 +135,11 @@ export async function POST(request) {
 
     console.log('Generated HTML length:', cleanedHtml.length)
 
+    // Generate a unique slug for this site
+    const baseSlug = generateSlug(requirements.businessName)
+    const slug = await getUniqueSlug(baseSlug)
+    console.log('Generated slug:', slug)
+
     // Save to Supabase
     const { data, error } = await supabase
       .from('generated_sites')
@@ -100,7 +148,8 @@ export async function POST(request) {
         industry: requirements.industry,
         requirements: requirements,
         html_code: cleanedHtml,
-        status: 'preview'
+        status: 'preview',
+        slug: slug
       })
       .select()
       .single()

@@ -15,8 +15,15 @@ CREATE TABLE IF NOT EXISTS generated_sites (
   email TEXT,
   phone TEXT,
   payment_status TEXT DEFAULT 'unpaid',
-  claimed_at TIMESTAMPTZ
+  claimed_at TIMESTAMPTZ,
+  -- Subdomain hosting fields
+  slug TEXT UNIQUE,  -- e.g., 'mybusiness' for mybusiness.voicesite.com
+  custom_slug BOOLEAN DEFAULT false,  -- true if user paid for custom slug
+  published_at TIMESTAMPTZ  -- when the site was claimed/published
 );
+
+-- Create an index for faster slug lookups
+CREATE INDEX IF NOT EXISTS idx_generated_sites_slug ON generated_sites(slug);
 
 -- Create an index for faster lookups by status
 CREATE INDEX IF NOT EXISTS idx_generated_sites_status ON generated_sites(status);
