@@ -123,7 +123,7 @@ export default function Home() {
           {isCallActive && (
             <div style={styles.callIndicator}>
               <span style={styles.pulse}></span>
-              Speaking with Alex...
+              Speaking with Sarah...
             </div>
           )}
 
@@ -158,7 +158,7 @@ export default function Home() {
         <div style={styles.steps}>
           <div style={styles.step}>
             <div style={styles.stepNumber}>1</div>
-            <h3 style={styles.stepTitle}>Talk to Alex</h3>
+            <h3 style={styles.stepTitle}>Talk to Sarah</h3>
             <p style={styles.stepDesc}>
               Click the button above and have a quick conversation with our AI assistant.
               Tell them about your business, what you offer, and who you serve.
