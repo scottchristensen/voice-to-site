@@ -70,9 +70,10 @@ export async function POST(request) {
     // Build the prompt for Gemini
     const prompt = buildWebsitePrompt(requirements)
 
-    // Call Gemini 3 Pro to generate the website
+    // Call Gemini 2.0 Flash (faster, fits within Vercel's 10s timeout)
+    // Note: Upgrade to Vercel Pro for 60s timeout to use Gemini 3 Pro
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-2.0-flash',
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 32000,
