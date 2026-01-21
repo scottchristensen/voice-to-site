@@ -9,6 +9,7 @@
   "dependencies": {
     "@google/generative-ai": "0.21.0",
     "@supabase/supabase-js": "2.39.0",
+    "@vapi-ai/web": "^2.5.2",
     "next": "^16.1.4",
     "react": "18.2.0",
     "react-dom": "18.2.0"

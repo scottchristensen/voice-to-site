@@ -62,3 +62,36 @@ CREATE TRIGGER update_generated_sites_updated_at
 
 -- Verify the table was created
 SELECT 'Table created successfully!' as message;
+
+-- =============================================
+-- CLEANUP FUNCTION FOR EXPIRED SITES
+-- Run this manually or set up a cron job
+-- =============================================
+
+-- Add expires_at column if it doesn't exist
+ALTER TABLE generated_sites
+ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT (now() + interval '14 days');
+
+-- Function to clean up expired unclaimed sites
+CREATE OR REPLACE FUNCTION cleanup_expired_sites()
+RETURNS INTEGER AS $$
+DECLARE
+  deleted_count INTEGER;
+BEGIN
+  DELETE FROM generated_sites
+  WHERE status = 'preview'
+    AND payment_status = 'unpaid'
+    AND expires_at < now();
+
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- To run cleanup manually:
+-- SELECT cleanup_expired_sites();
+
+-- To see sites that would be deleted:
+-- SELECT id, business_name, created_at, expires_at
+-- FROM generated_sites
+-- WHERE status = 'preview' AND payment_status = 'unpaid' AND expires_at < now();
