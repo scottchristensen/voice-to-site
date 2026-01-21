@@ -236,28 +236,59 @@ function ClaimModal({ site, baseUrl, customSlug, setCustomSlug, claimType, setCl
   const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [claimed, setClaimed] = useState(false)
+  const [error, setError] = useState(null)
 
   const handleClaim = async () => {
     if (!email) return
     setIsSubmitting(true)
+    setError(null)
 
     try {
-      const response = await fetch('/api/claim-site', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          siteId: site.id,
-          email,
-          customSlug: claimType === 'custom' ? customSlug : null,
-          claimType
+      // For paid options, redirect to Stripe Checkout
+      if (claimType === 'custom') {
+        const response = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            siteId: site.id,
+            productType: 'custom_url',
+            email,
+            customSlug: customSlug || null,
+          })
         })
-      })
 
-      if (response.ok) {
-        setClaimed(true)
+        const data = await response.json()
+
+        if (data.url) {
+          // Redirect to Stripe Checkout
+          window.location.href = data.url
+          return
+        } else {
+          setError(data.error || 'Failed to create checkout session')
+        }
+      } else {
+        // Free claim - use existing endpoint
+        const response = await fetch('/api/claim-site', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            siteId: site.id,
+            email,
+            customSlug: null,
+            claimType: 'free'
+          })
+        })
+
+        if (response.ok) {
+          setClaimed(true)
+        } else {
+          const data = await response.json()
+          setError(data.error || 'Failed to claim site')
+        }
       }
     } catch (err) {
       console.error('Claim error:', err)
+      setError('Something went wrong. Please try again.')
     }
     setIsSubmitting(false)
   }
@@ -359,6 +390,13 @@ function ClaimModal({ site, baseUrl, customSlug, setCustomSlug, claimType, setCl
           />
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div style={styles.errorBox}>
+            {error}
+          </div>
+        )}
+
         {/* Submit Button */}
         <button
           onClick={handleClaim}
@@ -368,11 +406,11 @@ function ClaimModal({ site, baseUrl, customSlug, setCustomSlug, claimType, setCl
             opacity: (!email || isSubmitting) ? 0.6 : 1
           }}
         >
-          {isSubmitting ? 'Publishing...' : claimType === 'free' ? 'Publish Free' : 'Publish for $29'}
+          {isSubmitting ? 'Processing...' : claimType === 'free' ? 'Publish Free' : 'Continue to Payment'}
         </button>
 
         <p style={styles.termsText}>
-          By claiming, you agree to our terms of service.
+          {claimType === 'custom' ? 'You\'ll be redirected to Stripe to complete payment.' : 'By claiming, you agree to our terms of service.'}
         </p>
       </div>
     </div>
@@ -725,6 +763,15 @@ const styles = {
     fontSize: '14px',
     outline: 'none',
     boxSizing: 'border-box',
+  },
+  errorBox: {
+    padding: '12px 16px',
+    background: '#fef2f2',
+    border: '1px solid #fecaca',
+    borderRadius: '8px',
+    color: '#dc2626',
+    fontSize: '14px',
+    marginBottom: '16px',
   },
   submitButton: {
     width: '100%',
