@@ -38,29 +38,76 @@ export default function Home() {
 
         // Listen for messages to capture the preview URL
         vapiInstance.on('message', (message) => {
-          console.log('Vapi message:', message)
+          console.log('Vapi message:', message.type, message)
 
-          // Check for tool call results that contain our preview URL
-          if (message.type === 'tool-call-result' || message.type === 'function-call-result') {
-            const result = message.result || message.output || ''
-            // Extract URL from the result
-            const urlMatch = result.match(/https?:\/\/[^\s]+\/preview\/[^\s]+/)
+          // Helper to extract URL from any string
+          const extractUrl = (text) => {
+            if (!text || typeof text !== 'string') return null
+            const urlMatch = text.match(/https?:\/\/[^\s]+\/preview\/[a-f0-9-]+/i)
             if (urlMatch) {
-              const url = urlMatch[0].replace(/[.,!?]$/, '') // Remove trailing punctuation
-              console.log('Found preview URL:', url)
+              return urlMatch[0].replace(/[.,!?]$/, '') // Remove trailing punctuation
+            }
+            return null
+          }
+
+          // Check various message types and structures for tool results
+          // Vapi may use different formats: tool-call-result, tool_call_result, function-call, etc.
+          const messageType = message.type || ''
+          const isToolResult = messageType.includes('tool') ||
+                              messageType.includes('function') ||
+                              message.functionCall ||
+                              message.toolCall ||
+                              message.toolCallResult
+
+          if (isToolResult) {
+            // Try multiple possible result locations
+            const possibleResults = [
+              message.result,
+              message.output,
+              message.toolCallResult?.result,
+              message.toolCallResult?.message,
+              message.functionCallResult?.result,
+              message.functionCallResult?.message,
+              message.content,
+              message.text,
+              // For nested tool results
+              message.toolCallResult && JSON.stringify(message.toolCallResult),
+              message.results?.[0]?.result,
+            ]
+
+            for (const result of possibleResults) {
+              const url = extractUrl(result)
+              if (url) {
+                console.log('Found preview URL in tool result:', url)
+                setPreviewUrl(url)
+                setShowModal(true)
+                return
+              }
+            }
+          }
+
+          // Check transcript messages (what the assistant says)
+          if (messageType === 'transcript' || message.transcript) {
+            const transcript = message.transcript || message.text || ''
+            const url = extractUrl(transcript)
+            if (url) {
+              console.log('Found preview URL in transcript:', url)
               setPreviewUrl(url)
               setShowModal(true)
             }
           }
 
-          // Also check transcript for URL (backup method)
-          if (message.type === 'transcript' && message.transcript) {
-            const urlMatch = message.transcript.match(/https?:\/\/[^\s]+\/preview\/[^\s]+/)
-            if (urlMatch && !previewUrl) {
-              const url = urlMatch[0].replace(/[.,!?]$/, '')
-              console.log('Found preview URL in transcript:', url)
-              setPreviewUrl(url)
-              setShowModal(true)
+          // Check conversation-update messages which may contain tool results
+          if (messageType === 'conversation-update' && message.conversation) {
+            const lastMsg = message.conversation[message.conversation.length - 1]
+            if (lastMsg) {
+              const content = lastMsg.content || lastMsg.text || lastMsg.result || ''
+              const url = extractUrl(typeof content === 'string' ? content : JSON.stringify(content))
+              if (url) {
+                console.log('Found preview URL in conversation update:', url)
+                setPreviewUrl(url)
+                setShowModal(true)
+              }
             }
           }
         })
