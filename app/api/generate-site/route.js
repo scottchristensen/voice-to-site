@@ -12,32 +12,74 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 export async function POST(request) {
   try {
-    // Get the data sent from Vapi
     const body = await request.json()
-    
-    // Extract the website requirements from the conversation
-    // (Vapi sends this in a specific format - we'll configure that later)
-    const requirements = body.message?.toolCalls?.[0]?.function?.arguments
-    
-    if (!requirements) {
-      return Response.json({ error: 'No requirements provided' }, { status: 400 })
+
+    console.log('Received request body:', JSON.stringify(body, null, 2))
+
+    // Handle both Vapi format and direct test format
+    let requirements
+    let toolCallId = null
+    let isVapiRequest = false
+
+    // Check for Vapi's tool call format (toolCallList)
+    if (body.message?.toolCallList?.[0]) {
+      const toolCall = body.message.toolCallList[0]
+      toolCallId = toolCall.id
+      requirements = toolCall.function?.arguments || toolCall.arguments
+      isVapiRequest = true
+      console.log('Detected Vapi format, toolCallId:', toolCallId)
+    }
+    // Also check for alternative Vapi format (toolCalls)
+    else if (body.message?.toolCalls?.[0]) {
+      const toolCall = body.message.toolCalls[0]
+      toolCallId = toolCall.id
+      requirements = toolCall.function?.arguments || toolCall.arguments
+      isVapiRequest = true
+      console.log('Detected alternative Vapi format, toolCallId:', toolCallId)
+    }
+    // Direct test format - requirements sent directly
+    else if (body.businessName || body.requirements) {
+      requirements = body.requirements || body
+      console.log('Detected direct test format')
     }
 
-    console.log('Received requirements:', requirements)
+    // Parse requirements if it's a string (Vapi sometimes sends stringified JSON)
+    if (typeof requirements === 'string') {
+      try {
+        requirements = JSON.parse(requirements)
+      } catch (e) {
+        console.error('Failed to parse requirements string:', e)
+      }
+    }
+
+    if (!requirements) {
+      const errorResponse = { error: 'No requirements provided' }
+      if (isVapiRequest) {
+        return Response.json({
+          results: [{
+            toolCallId: toolCallId || 'unknown',
+            result: 'Error: No requirements were provided. Please try again.'
+          }]
+        })
+      }
+      return Response.json(errorResponse, { status: 400 })
+    }
+
+    console.log('Parsed requirements:', requirements)
 
     // Build the prompt for Gemini
     const prompt = buildWebsitePrompt(requirements)
 
     // Call Gemini 3 Pro to generate the website
-    const model = genAI.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({
       model: 'gemini-3-pro-preview',
       generationConfig: {
-        // Use high thinking for better quality output
         temperature: 0.7,
         maxOutputTokens: 32000,
       }
     })
 
+    console.log('Calling Gemini to generate website...')
     const result = await model.generateContent(prompt)
     const htmlCode = result.response.text()
 
@@ -46,6 +88,8 @@ export async function POST(request) {
       .replace(/```html\n?/g, '')
       .replace(/```\n?/g, '')
       .trim()
+
+    console.log('Generated HTML length:', cleanedHtml.length)
 
     // Save to Supabase
     const { data, error } = await supabase
@@ -62,11 +106,32 @@ export async function POST(request) {
 
     if (error) {
       console.error('Supabase error:', error)
-      return Response.json({ error: 'Failed to save site' }, { status: 500 })
+      if (isVapiRequest) {
+        return Response.json({
+          results: [{
+            toolCallId: toolCallId || 'unknown',
+            result: 'Sorry, there was an error saving your website. Please try again.'
+          }]
+        })
+      }
+      return Response.json({ error: 'Failed to save site', details: error.message }, { status: 500 })
     }
 
-    // Return the preview URL
-    const previewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/preview/${data.id}`
+    // Build the preview URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const previewUrl = `${baseUrl}/preview/${data.id}`
+
+    console.log('Website saved successfully! Preview URL:', previewUrl)
+
+    // Return response in appropriate format
+    if (isVapiRequest) {
+      return Response.json({
+        results: [{
+          toolCallId: toolCallId,
+          result: `Great news! Your website is ready! You can view it at: ${previewUrl}`
+        }]
+      })
+    }
 
     return Response.json({
       success: true,
@@ -76,6 +141,20 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Error generating site:', error)
+
+    // Check if this was a Vapi request
+    const body = await request.clone().json().catch(() => ({}))
+    const toolCallId = body.message?.toolCallList?.[0]?.id || body.message?.toolCalls?.[0]?.id
+
+    if (toolCallId) {
+      return Response.json({
+        results: [{
+          toolCallId: toolCallId,
+          result: `Sorry, there was an error generating your website: ${error.message}. Please try again.`
+        }]
+      })
+    }
+
     return Response.json({ error: error.message }, { status: 500 })
   }
 }
@@ -100,14 +179,16 @@ ${requirements.additionalInfo || 'None provided'}
 REQUIREMENTS:
 1. Create a COMPLETE, standalone HTML file with embedded CSS and minimal JavaScript
 2. Make it mobile-responsive using CSS media queries
-3. Use a modern, clean design with good typography
-4. Include these sections: Hero, About/Services, Features/Benefits, Testimonials (use placeholder text), Contact/CTA
-5. Use placeholder images from https://placehold.co (e.g., https://placehold.co/600x400)
-6. Include smooth scroll behavior
-7. Make the color scheme match the preference: ${requirements.colorPreference || 'professional blue'}
-8. Add subtle animations/transitions for polish
-9. Include proper meta tags for SEO
-10. Make sure the design looks premium and professional
+3. Use a modern, clean design with good typography (use Google Fonts like Inter or Poppins)
+4. Include these sections: Hero, About/Services, Features/Benefits, Testimonials (use realistic placeholder text), Contact/CTA
+5. Use placeholder images from https://placehold.co (e.g., https://placehold.co/600x400/1a1a2e/ffffff?text=Hero+Image)
+6. Include smooth scroll behavior for navigation links
+7. Make the color scheme match: ${requirements.colorPreference || 'professional blue'} - use a cohesive palette
+8. Add subtle hover animations and transitions for polish
+9. Include proper meta tags for SEO (title, description, viewport)
+10. The design should look premium, modern, and professional - not like a generic template
+11. Include a sticky/fixed navigation header
+12. Add a footer with social media placeholder links
 
 OUTPUT ONLY THE HTML CODE - no explanations, no markdown, just the complete HTML file starting with <!DOCTYPE html>`
 }
