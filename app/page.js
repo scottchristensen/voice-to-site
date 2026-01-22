@@ -620,20 +620,20 @@ const styles = {
   sectionTitle: {
     fontSize: '36px',
     fontWeight: '700',
-    textAlign: 'left',
+    textAlign: 'center',
     marginBottom: '48px',
   },
   steps: {
     display: 'flex',
     gap: '40px',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
   },
   step: {
     flex: '1',
     minWidth: '250px',
     maxWidth: '350px',
-    textAlign: 'left',
+    textAlign: 'center',
   },
   stepNumber: {
     width: '48px',
@@ -646,7 +646,7 @@ const styles = {
     justifyContent: 'center',
     fontSize: '20px',
     fontWeight: '700',
-    margin: '0 0 16px 0',
+    margin: '0 auto 16px',
   },
   stepTitle: {
     fontSize: '20px',
@@ -660,14 +660,14 @@ const styles = {
   pricingSection: {
     padding: '80px 40px',
     background: '#f8f9fa',
-    maxWidth: '1200px',
-    margin: '0 auto',
   },
   pricingCards: {
     display: 'flex',
     gap: '24px',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
+    maxWidth: '1000px',
+    margin: '0 auto',
   },
   pricingCard: {
     flex: '1',
@@ -676,7 +676,7 @@ const styles = {
     background: 'white',
     borderRadius: '16px',
     padding: '32px',
-    textAlign: 'left',
+    textAlign: 'center',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
     position: 'relative',
   },
@@ -687,7 +687,8 @@ const styles = {
   pricingBadge: {
     position: 'absolute',
     top: '-12px',
-    left: '16px',
+    left: '50%',
+    transform: 'translateX(-50%)',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
     padding: '4px 16px',
@@ -719,10 +720,8 @@ const styles = {
     lineHeight: '2',
   },
   footer: {
-    textAlign: 'left',
+    textAlign: 'center',
     padding: '40px',
-    maxWidth: '1200px',
-    margin: '0 auto',
     color: '#888',
   },
 }
