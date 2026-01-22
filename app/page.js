@@ -237,7 +237,7 @@ export default function Home() {
 
       {/* Navigation */}
       <nav style={styles.nav}>
-        <div style={styles.logo}>Speak Your Site</div>
+        <div style={styles.logo}>SpeakYour.site</div>
         <div style={styles.navLinks}>
           <a href="#how-it-works" style={styles.navLink}>How It Works</a>
           <a href="#pricing" style={styles.navLink}>Pricing</a>
@@ -248,17 +248,15 @@ export default function Home() {
       <section style={styles.hero}>
         <div style={styles.heroContent}>
           <h1 style={styles.heroTitle}>
-            Build Your Website<br />
-            <span style={styles.heroAccent}>Just By Talking</span>
+            Your voice builds your website
           </h1>
           <p style={styles.heroSubtitle}>
-            Describe your business to our AI voice agent and get a beautiful,
-            professional marketing website in under 5 minutes. No coding, no design skills,
-            no hassle.
+            Get online in minutes. No typing. No tech skills.
           </p>
 
           {/* CTA Button */}
           <button
+            className="cta-button"
             onClick={isCallActive ? endCall : startCall}
             disabled={callStatus === 'connecting'}
             style={{
@@ -270,7 +268,7 @@ export default function Home() {
             {callStatus === 'idle' && (
               <>
                 <MicIcon />
-                Start Building Your Site
+                Start Speaking
               </>
             )}
             {callStatus === 'connecting' && (
@@ -341,31 +339,28 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" style={styles.section}>
-        <h2 style={styles.sectionTitle}>How It Works</h2>
+      <section id="how-it-works" style={styles.howItWorksSection}>
+        <h2 style={styles.sectionTitle}>Speak. Build. Launch.</h2>
         <div style={styles.steps}>
           <div style={styles.step}>
             <div style={styles.stepNumber}>1</div>
-            <h3 style={styles.stepTitle}>Talk to Sarah</h3>
+            <h3 style={styles.stepTitle}>Speak</h3>
             <p style={styles.stepDesc}>
-              Click the button above and have a quick conversation with our AI assistant.
-              Tell them about your business, what you offer, and who you serve.
+              Tell us about your business.
             </p>
           </div>
           <div style={styles.step}>
             <div style={styles.stepNumber}>2</div>
-            <h3 style={styles.stepTitle}>AI Builds Your Site</h3>
+            <h3 style={styles.stepTitle}>Build</h3>
             <p style={styles.stepDesc}>
-              Our AI takes your conversation and generates a complete, professional
-              marketing website tailored to your business in seconds.
+              We create your website instantly.
             </p>
           </div>
           <div style={styles.step}>
             <div style={styles.stepNumber}>3</div>
-            <h3 style={styles.stepTitle}>Preview & Claim</h3>
+            <h3 style={styles.stepTitle}>Launch</h3>
             <p style={styles.stepDesc}>
-              See your new site instantly. Love it? Export the code, let us host it,
-              or get premium design services to make it perfect.
+              Go live and start getting clients.
             </p>
           </div>
         </div>
@@ -413,10 +408,12 @@ export default function Home() {
 
       {/* Footer */}
       <footer style={styles.footer}>
-        <p>Built with Speak Your Site</p>
+        <p>Built with SpeakYour.site</p>
       </footer>
 
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap');
+
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.5; transform: scale(1.1); }
@@ -431,6 +428,19 @@ export default function Home() {
         }
         html {
           scroll-behavior: smooth;
+        }
+
+        /* Mobile responsive CTAs */
+        @media (max-width: 768px) {
+          .cta-button {
+            width: 100% !important;
+          }
+          nav {
+            padding: 16px 20px !important;
+          }
+          h1 {
+            font-size: 40px !important;
+          }
         }
       `}</style>
     </div>
@@ -476,8 +486,8 @@ function LoadingSpinner() {
 // Styles
 const styles = {
   container: {
-    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-    color: '#1a1a2e',
+    fontFamily: "'Work Sans', 'Space Grotesk', system-ui, -apple-system, sans-serif",
+    color: '#2D2D2D',
     minHeight: '100vh',
     background: '#ffffff',
   },
@@ -511,7 +521,7 @@ const styles = {
     fontSize: '28px',
     fontWeight: '700',
     marginBottom: '12px',
-    color: '#1a1a2e',
+    color: '#4A3525',
   },
   modalText: {
     color: '#666',
@@ -522,7 +532,7 @@ const styles = {
     display: 'block',
     width: '100%',
     padding: '16px 32px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: '#D4764A',
     color: 'white',
     textDecoration: 'none',
     borderRadius: '12px',
@@ -532,6 +542,7 @@ const styles = {
     border: 'none',
     cursor: 'pointer',
     textAlign: 'center',
+    transition: 'transform 0.2s, box-shadow 0.2s',
   },
   modalClose: {
     background: 'none',
@@ -580,9 +591,7 @@ const styles = {
   logo: {
     fontSize: '24px',
     fontWeight: '700',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
+    color: '#4A3525',
   },
   navLinks: {
     display: 'flex',
@@ -612,11 +621,10 @@ const styles = {
     fontWeight: '800',
     lineHeight: '1.1',
     marginBottom: '24px',
+    color: '#4A3525',
   },
   heroAccent: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
+    color: '#D4764A',
   },
   heroSubtitle: {
     fontSize: '20px',
@@ -633,12 +641,12 @@ const styles = {
     fontSize: '18px',
     fontWeight: '600',
     color: 'white',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: '#D4764A',
     border: 'none',
     borderRadius: '12px',
     cursor: 'pointer',
     transition: 'transform 0.2s, box-shadow 0.2s',
-    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+    boxShadow: '0 4px 15px rgba(212, 118, 74, 0.3)',
   },
   ctaButtonActive: {
     background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
@@ -653,7 +661,7 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     marginTop: '16px',
-    color: '#667eea',
+    color: '#D4764A',
     fontWeight: '500',
   },
   pulse: {
@@ -701,7 +709,7 @@ const styles = {
   },
   mockupHero: {
     height: '120px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: '#D4764A',
     borderRadius: '8px',
     marginBottom: '16px',
   },
@@ -726,17 +734,24 @@ const styles = {
     maxWidth: '1200px',
     margin: '0 auto',
   },
+  howItWorksSection: {
+    padding: '80px 40px',
+    background: '#EBF2E8',
+  },
   sectionTitle: {
     fontSize: '36px',
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: '48px',
+    color: '#4A3525',
   },
   steps: {
     display: 'flex',
     gap: '40px',
     flexWrap: 'wrap',
     justifyContent: 'center',
+    maxWidth: '1200px',
+    margin: '0 auto',
   },
   step: {
     flex: '1',
@@ -747,7 +762,7 @@ const styles = {
   stepNumber: {
     width: '48px',
     height: '48px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: '#D4764A',
     color: 'white',
     borderRadius: '50%',
     display: 'flex',
@@ -761,6 +776,7 @@ const styles = {
     fontSize: '20px',
     fontWeight: '600',
     marginBottom: '8px',
+    color: '#4A3525',
   },
   stepDesc: {
     color: '#666',
@@ -768,7 +784,7 @@ const styles = {
   },
   pricingSection: {
     padding: '80px 40px',
-    background: '#f8f9fa',
+    background: '#FAF9F6',
   },
   pricingCards: {
     display: 'flex',
@@ -790,7 +806,7 @@ const styles = {
     position: 'relative',
   },
   pricingCardFeatured: {
-    border: '2px solid #667eea',
+    border: '2px solid #D4764A',
     transform: 'scale(1.05)',
   },
   pricingBadge: {
@@ -798,7 +814,7 @@ const styles = {
     top: '-12px',
     left: '50%',
     transform: 'translateX(-50%)',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: '#D4764A',
     color: 'white',
     padding: '4px 16px',
     borderRadius: '20px',
@@ -809,13 +825,12 @@ const styles = {
     fontSize: '20px',
     fontWeight: '600',
     marginBottom: '8px',
+    color: '#4A3525',
   },
   pricingPrice: {
     fontSize: '48px',
     fontWeight: '700',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
+    color: '#D4764A',
   },
   pricingDesc: {
     color: '#888',
