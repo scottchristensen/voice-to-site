@@ -102,7 +102,25 @@ async function handleSuccessfulPayment(session) {
     console.error('Failed to update site after payment:', error)
   } else {
     console.log('Site updated successfully after payment')
-  }
 
-  // TODO: Send confirmation email to customer
+    // Send claimed confirmation email
+    if (session.customer_email) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voice-to-site.vercel.app'
+        await fetch(`${baseUrl}/api/send-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            siteId,
+            email: session.customer_email,
+            type: 'claimed'
+          })
+        })
+        console.log('Claimed email sent to:', session.customer_email)
+      } catch (emailError) {
+        console.error('Failed to send claimed email:', emailError)
+        // Don't fail the webhook if email fails
+      }
+    }
+  }
 }

@@ -88,10 +88,22 @@ export async function POST(request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voice-to-site.vercel.app'
     const publishedUrl = `${baseUrl}/s/${updatedSite.slug}`
 
-    // TODO: In a real app, you would:
-    // 1. Process payment if claimType === 'custom'
-    // 2. Send confirmation email to the user
-    // 3. Set up any analytics tracking
+    // Send claimed confirmation email
+    try {
+      await fetch(`${baseUrl}/api/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          siteId,
+          email,
+          type: 'claimed'
+        })
+      })
+      console.log('Claimed email sent to:', email)
+    } catch (emailError) {
+      console.error('Failed to send claimed email:', emailError)
+      // Don't fail the claim if email fails
+    }
 
     console.log(`Site claimed! ID: ${siteId}, Email: ${email}, URL: ${publishedUrl}`)
 

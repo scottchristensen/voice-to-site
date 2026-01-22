@@ -8,7 +8,7 @@ export default function PreviewPage({ params }) {
   const [site, setSite] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [timeLeft, setTimeLeft] = useState(600) // 10 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(86400) // 24 hours in seconds
   const [showClaimModal, setShowClaimModal] = useState(false)
   const [customSlug, setCustomSlug] = useState('')
   const [claimType, setClaimType] = useState('free') // 'free' or 'custom'
@@ -32,9 +32,9 @@ export default function PreviewPage({ params }) {
         setError('Site not found')
       } else {
         setSite(data)
-        // Calculate time left based on created_at (10 min from creation)
+        // Calculate time left based on created_at (24 hours from creation)
         const created = new Date(data.created_at)
-        const expiresAt = new Date(created.getTime() + 10 * 60 * 1000)
+        const expiresAt = new Date(created.getTime() + 24 * 60 * 60 * 1000)
         const now = new Date()
         const remaining = Math.max(0, Math.floor((expiresAt - now) / 1000))
         setTimeLeft(remaining)
@@ -55,10 +55,14 @@ export default function PreviewPage({ params }) {
     return () => clearInterval(timer)
   }, [timeLeft, site?.payment_status])
 
-  // Format time as MM:SS
+  // Format time as HH:MM:SS or MM:SS
   const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
+    const hours = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
     const secs = seconds % 60
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 

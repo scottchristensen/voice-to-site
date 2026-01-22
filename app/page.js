@@ -7,7 +7,12 @@ export default function Home() {
   const [callStatus, setCallStatus] = useState('idle') // idle, connecting, connected, ended
   const [vapi, setVapi] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
+  const [siteId, setSiteId] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [email, setEmail] = useState('')
+  const [capturedEmail, setCapturedEmail] = useState('') // Email captured from Vapi
+  const [emailSent, setEmailSent] = useState(false)
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
 
   useEffect(() => {
     // Dynamically import Vapi SDK
@@ -36,49 +41,76 @@ export default function Home() {
           setIsCallActive(false)
         })
 
-        // Helper to extract URL from any string
-        const extractUrl = (text) => {
+        // Helper to extract URL and siteId from any string
+        const extractUrlAndId = (text) => {
           if (!text || typeof text !== 'string') return null
           // Match preview URLs with UUID pattern
-          const urlMatch = text.match(/https?:\/\/[^\s"']+\/preview\/[a-f0-9-]+/i)
+          const urlMatch = text.match(/https?:\/\/[^\s"']+\/preview\/([a-f0-9-]+)/i)
           if (urlMatch) {
-            return urlMatch[0].replace(/[.,!?]$/, '') // Remove trailing punctuation
+            const url = urlMatch[0].replace(/[.,!?]$/, '') // Remove trailing punctuation
+            const id = urlMatch[1] // Capture the UUID
+            return { url, id }
           }
           return null
+        }
+
+        // Helper to extract email from text
+        const extractEmail = (text) => {
+          if (!text || typeof text !== 'string') return null
+          const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i)
+          return emailMatch ? emailMatch[0] : null
         }
 
         // Track if we've already shown the modal
         let urlFound = false
 
-        // Listen for messages to capture the preview URL
+        // Listen for messages to capture the preview URL and email
         vapiInstance.on('message', (message) => {
-          if (urlFound) return // Don't process more if we already found URL
-
           console.log('Vapi message:', message.type, JSON.stringify(message, null, 2))
 
-          // ULTIMATE FALLBACK: Stringify the entire message and search for URL
+          // Try to extract email from any message (for pre-filling)
           const fullMessageStr = JSON.stringify(message)
-          const urlFromFull = extractUrl(fullMessageStr)
-          if (urlFromFull) {
-            console.log('Found preview URL in full message:', urlFromFull)
-            urlFound = true
-            setPreviewUrl(urlFromFull)
-            setShowModal(true)
-            return
+          const foundEmail = extractEmail(fullMessageStr)
+          if (foundEmail) {
+            console.log('Found email in message:', foundEmail)
+            setCapturedEmail(foundEmail)
+          }
+
+          // Look for URL if not found yet
+          if (!urlFound) {
+            const result = extractUrlAndId(fullMessageStr)
+            if (result) {
+              console.log('Found preview URL:', result.url, 'ID:', result.id)
+              urlFound = true
+              setPreviewUrl(result.url)
+              setSiteId(result.id)
+              setShowModal(true)
+            }
           }
         })
 
         // Also listen for speech-update which contains what's being said
         vapiInstance.on('speech-update', (update) => {
-          if (urlFound) return
           console.log('Speech update:', update)
           const text = update?.text || update?.transcript || ''
-          const url = extractUrl(text)
-          if (url) {
-            console.log('Found URL in speech:', url)
-            urlFound = true
-            setPreviewUrl(url)
-            setShowModal(true)
+
+          // Try to capture email from speech
+          const foundEmail = extractEmail(text)
+          if (foundEmail) {
+            console.log('Found email in speech:', foundEmail)
+            setCapturedEmail(foundEmail)
+          }
+
+          // Look for URL if not found yet
+          if (!urlFound) {
+            const result = extractUrlAndId(text)
+            if (result) {
+              console.log('Found URL in speech:', result.url)
+              urlFound = true
+              setPreviewUrl(result.url)
+              setSiteId(result.id)
+              setShowModal(true)
+            }
           }
         })
 
@@ -118,36 +150,94 @@ export default function Home() {
 
   return (
     <div style={styles.container}>
-      {/* Success Modal */}
+      {/* Email Gate Modal */}
       {showModal && previewUrl && (
-        <div style={styles.modalOverlay} onClick={() => setShowModal(false)}>
+        <div style={styles.modalOverlay}>
           <div style={styles.modal} onClick={e => e.stopPropagation()}>
-            <div style={styles.modalIcon}>🎉</div>
-            <h2 style={styles.modalTitle}>Your Website is Ready!</h2>
-            <p style={styles.modalText}>
-              Sarah created a beautiful website for you. Click below to see it!
-            </p>
-            <a
-              href={previewUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={styles.modalButton}
-            >
-              View Your Website
-            </a>
-            <button
-              onClick={() => setShowModal(false)}
-              style={styles.modalClose}
-            >
-              Close
-            </button>
+            {!emailSent ? (
+              <>
+                <div style={styles.modalIcon}>🎉</div>
+                <h2 style={styles.modalTitle}>Your Website is Ready!</h2>
+                <p style={styles.modalText}>
+                  Enter your email to get the link to your new website. We'll also send you a copy so you don't lose it!
+                </p>
+                <input
+                  type="email"
+                  value={email || capturedEmail}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  style={styles.emailInput}
+                  autoFocus
+                />
+                <button
+                  onClick={async () => {
+                    const emailToUse = email || capturedEmail
+                    if (!emailToUse) return
+                    setIsSendingEmail(true)
+                    try {
+                      await fetch('/api/send-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          siteId,
+                          email: emailToUse,
+                          type: 'preview'
+                        })
+                      })
+                      setEmailSent(true)
+                    } catch (err) {
+                      console.error('Email error:', err)
+                      setEmailSent(true) // Still show link even if email fails
+                    }
+                    setIsSendingEmail(false)
+                  }}
+                  disabled={!(email || capturedEmail) || isSendingEmail}
+                  style={{
+                    ...styles.modalButton,
+                    opacity: (!(email || capturedEmail) || isSendingEmail) ? 0.6 : 1,
+                    cursor: (!(email || capturedEmail) || isSendingEmail) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isSendingEmail ? 'Sending...' : 'Email Me My Site'}
+                </button>
+                <p style={styles.modalSubtext}>
+                  We'll send you a link so you can access your site anytime
+                </p>
+              </>
+            ) : (
+              <>
+                <div style={styles.modalIcon}>✉️</div>
+                <h2 style={styles.modalTitle}>Check Your Inbox!</h2>
+                <p style={styles.modalText}>
+                  We've emailed you a link to your website. You can also view it now:
+                </p>
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={styles.modalButton}
+                >
+                  View Your Website
+                </a>
+                <button
+                  onClick={() => {
+                    setShowModal(false)
+                    setEmailSent(false)
+                    setEmail('')
+                  }}
+                  style={styles.modalClose}
+                >
+                  Close
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
 
       {/* Navigation */}
       <nav style={styles.nav}>
-        <div style={styles.logo}>VoiceSite</div>
+        <div style={styles.logo}>Speak Your Site</div>
         <div style={styles.navLinks}>
           <a href="#how-it-works" style={styles.navLink}>How It Works</a>
           <a href="#pricing" style={styles.navLink}>Pricing</a>
@@ -323,7 +413,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer style={styles.footer}>
-        <p>Built with VoiceSite</p>
+        <p>Built with Speak Your Site</p>
       </footer>
 
       <style jsx global>{`
@@ -439,6 +529,9 @@ const styles = {
     fontWeight: '600',
     fontSize: '18px',
     marginBottom: '12px',
+    border: 'none',
+    cursor: 'pointer',
+    textAlign: 'center',
   },
   modalClose: {
     background: 'none',
@@ -447,6 +540,22 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     padding: '8px',
+  },
+  emailInput: {
+    width: '100%',
+    padding: '16px',
+    fontSize: '16px',
+    border: '2px solid #eee',
+    borderRadius: '12px',
+    marginBottom: '16px',
+    outline: 'none',
+    boxSizing: 'border-box',
+    textAlign: 'center',
+  },
+  modalSubtext: {
+    color: '#888',
+    fontSize: '13px',
+    marginTop: '8px',
   },
   // Preview link (when modal is closed)
   previewLink: {
