@@ -8,6 +8,19 @@ export default function Home() {
   const [vapi, setVapi] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+
+  useEffect(() => {
+    // Detect OS dark mode preference
+    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    setIsDarkMode(darkModeMediaQuery.matches)
+
+    // Listen for changes to OS dark mode setting
+    const handleChange = (e) => setIsDarkMode(e.matches)
+    darkModeMediaQuery.addEventListener('change', handleChange)
+
+    return () => darkModeMediaQuery.removeEventListener('change', handleChange)
+  }, [])
 
   useEffect(() => {
     // Dynamically import Vapi SDK
@@ -95,7 +108,7 @@ export default function Home() {
   }
 
   return (
-    <div style={styles.container}>
+    <div style={{...styles.container, ...(isDarkMode && styles.containerDark)}}>
       {/* Success Modal */}
       {showModal && previewUrl && (
         <div style={styles.modalOverlay} onClick={() => setShowModal(false)}>
@@ -124,22 +137,22 @@ export default function Home() {
       )}
 
       {/* Navigation */}
-      <nav style={styles.nav}>
+      <nav style={{...styles.nav, ...(isDarkMode && styles.navDark)}}>
         <div style={styles.logo}>Speak to Site</div>
         <div style={styles.navLinks}>
-          <a href="#how-it-works" style={styles.navLink}>How It Works</a>
-          <a href="#pricing" style={styles.navLink}>Pricing</a>
+          <a href="#how-it-works" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>How It Works</a>
+          <a href="#pricing" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>Pricing</a>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section style={styles.hero}>
+      <section style={{...styles.hero, ...(isDarkMode && styles.heroDark)}}>
         <div style={styles.heroContent}>
-          <h1 style={styles.heroTitle}>
+          <h1 style={{...styles.heroTitle, ...(isDarkMode && styles.heroTitleDark)}}>
             Build Your Website<br />
             <span style={styles.heroAccent}>Just By Talking</span>
           </h1>
-          <p style={styles.heroSubtitle}>
+          <p style={{...styles.heroSubtitle, ...(isDarkMode && styles.heroSubtitleDark)}}>
             Describe your business to our AI voice agent and get a beautiful,
             professional marketing website in under 5 minutes. No coding, no design skills,
             no hassle.
@@ -261,29 +274,29 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" style={styles.section}>
-        <h2 style={styles.sectionTitle}>How It Works</h2>
+      <section id="how-it-works" style={{...styles.section, ...(isDarkMode && styles.sectionDark)}}>
+        <h2 style={{...styles.sectionTitle, ...(isDarkMode && styles.sectionTitleDark)}}>How It Works</h2>
         <div style={styles.steps}>
           <div style={styles.step}>
             <div style={styles.stepNumber}>1</div>
-            <h3 style={styles.stepTitle}>Talk to Sarah</h3>
-            <p style={styles.stepDesc}>
+            <h3 style={{...styles.stepTitle, ...(isDarkMode && styles.stepTitleDark)}}>Talk to Sarah</h3>
+            <p style={{...styles.stepDesc, ...(isDarkMode && styles.stepDescDark)}}>
               Click the button above and have a quick conversation with our AI assistant.
               Tell them about your business, what you offer, and who you serve.
             </p>
           </div>
           <div style={styles.step}>
             <div style={styles.stepNumber}>2</div>
-            <h3 style={styles.stepTitle}>AI Builds Your Site</h3>
-            <p style={styles.stepDesc}>
+            <h3 style={{...styles.stepTitle, ...(isDarkMode && styles.stepTitleDark)}}>AI Builds Your Site</h3>
+            <p style={{...styles.stepDesc, ...(isDarkMode && styles.stepDescDark)}}>
               Our AI takes your conversation and generates a complete, professional
               marketing website tailored to your business in seconds.
             </p>
           </div>
           <div style={styles.step}>
             <div style={styles.stepNumber}>3</div>
-            <h3 style={styles.stepTitle}>Preview & Claim</h3>
-            <p style={styles.stepDesc}>
+            <h3 style={{...styles.stepTitle, ...(isDarkMode && styles.stepTitleDark)}}>Preview & Claim</h3>
+            <p style={{...styles.stepDesc, ...(isDarkMode && styles.stepDescDark)}}>
               See your new site instantly. Love it? Export the code, let us host it,
               or get premium design services to make it perfect.
             </p>
@@ -292,24 +305,24 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" style={styles.pricingSection}>
-        <h2 style={styles.sectionTitle}>Simple Pricing</h2>
+      <section id="pricing" style={{...styles.pricingSection, ...(isDarkMode && styles.pricingSectionDark)}}>
+        <h2 style={{...styles.sectionTitle, ...(isDarkMode && styles.sectionTitleDark)}}>Simple Pricing</h2>
         <div style={styles.pricingCards}>
-          <div style={styles.pricingCard}>
+          <div style={{...styles.pricingCard, ...(isDarkMode && styles.pricingCardDark)}}>
             <h3 style={styles.pricingTitle}>Export Code</h3>
             <div style={styles.pricingPrice}>$49</div>
-            <p style={styles.pricingDesc}>one-time</p>
+            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>one-time</p>
             <ul style={styles.pricingFeatures}>
               <li>Download HTML/CSS/JS</li>
               <li>Host anywhere you want</li>
               <li>Full ownership</li>
             </ul>
           </div>
-          <div style={{ ...styles.pricingCard, ...styles.pricingCardFeatured }}>
+          <div style={{ ...styles.pricingCard, ...styles.pricingCardFeatured, ...(isDarkMode && styles.pricingCardDark) }}>
             <div style={styles.pricingBadge}>Popular</div>
             <h3 style={styles.pricingTitle}>Hosted</h3>
             <div style={styles.pricingPrice}>$29</div>
-            <p style={styles.pricingDesc}>per month</p>
+            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>per month</p>
             <ul style={styles.pricingFeatures}>
               <li>We host it for you</li>
               <li>Custom domain</li>
@@ -317,10 +330,10 @@ export default function Home() {
               <li>Basic analytics</li>
             </ul>
           </div>
-          <div style={styles.pricingCard}>
+          <div style={{...styles.pricingCard, ...(isDarkMode && styles.pricingCardDark)}}>
             <h3 style={styles.pricingTitle}>Premium Design</h3>
             <div style={styles.pricingPrice}>$499+</div>
-            <p style={styles.pricingDesc}>one-time</p>
+            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>one-time</p>
             <ul style={styles.pricingFeatures}>
               <li>Professional designer</li>
               <li>Custom refinements</li>
@@ -332,7 +345,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer style={styles.footer}>
+      <footer style={{...styles.footer, ...(isDarkMode && styles.footerDark)}}>
         <p>Built with Speak to Site</p>
       </footer>
 
@@ -798,5 +811,53 @@ const styles = {
     textAlign: 'center',
     padding: '40px',
     color: '#888',
+  },
+  // Dark mode styles
+  containerDark: {
+    background: '#0a0a0a',
+    color: '#e5e5e5',
+  },
+  navDark: {
+    background: '#0a0a0a',
+    borderBottom: '1px solid #222',
+  },
+  navLinkDark: {
+    color: '#b0b0b0',
+  },
+  heroDark: {
+    background: '#0a0a0a',
+  },
+  heroTitleDark: {
+    color: '#ffffff',
+  },
+  heroSubtitleDark: {
+    color: '#b0b0b0',
+  },
+  sectionDark: {
+    background: '#0a0a0a',
+  },
+  sectionTitleDark: {
+    color: '#ffffff',
+  },
+  stepTitleDark: {
+    color: '#ffffff',
+  },
+  stepDescDark: {
+    color: '#b0b0b0',
+  },
+  pricingSectionDark: {
+    background: '#111',
+  },
+  pricingCardDark: {
+    background: '#1a1a1a',
+    border: '1px solid #333',
+  },
+  pricingDescDark: {
+    color: '#999',
+  },
+  footerDark: {
+    background: '#0a0a0a',
+    borderTop: '1px solid #222',
+    color: '#666',
   },
 }
