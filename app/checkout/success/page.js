@@ -1,13 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
+import { getStripe, getSupabase } from '../../api/_lib/clients'
 
 export default async function CheckoutSuccessPage({ searchParams }) {
+  const stripe = getStripe()
+  const supabase = getSupabase()
+
   const { session_id } = await searchParams
 
   if (!session_id) {
