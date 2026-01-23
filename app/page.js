@@ -2,6 +2,179 @@
 
 import { useState, useEffect } from 'react'
 
+const translations = {
+  en: {
+    nav: {
+      logo: 'Speak to Site',
+      howItWorks: 'How It Works',
+      pricing: 'Pricing'
+    },
+    modal: {
+      title: 'Your Website is Ready!',
+      text: 'Sarah created a beautiful website for you. Click below to see it!',
+      viewButton: 'View Your Website',
+      close: 'Close'
+    },
+    hero: {
+      title: 'Build Your Website',
+      titleAccent: 'Just By Talking',
+      subtitle: 'Describe your business to our AI voice agent and get a beautiful, professional marketing website in under 5 minutes. No coding, no design skills, no hassle.',
+      ctaStart: 'Start Building Your Site',
+      ctaConnecting: 'Connecting...',
+      ctaEnd: 'End Call',
+      ctaEnded: 'Call Ended',
+      callIndicator: 'Speaking with Sarah...',
+      previewReady: 'Your site is ready! ',
+      previewLink: 'View it here →',
+      freeCta: 'Free preview - No credit card required',
+      testButton: '🧪 Test Modal (Joe\'s Pizza)'
+    },
+    valueProps: {
+      title: 'Get More Business In Just 5 Minutes',
+      subtitle: 'Uplevel your professional business with an online presence that drives real results',
+      revenue: {
+        title: 'Increase Revenue',
+        desc: 'Get discovered by more customers and convert them with a professional website that builds trust and credibility.'
+      },
+      discover: {
+        title: 'Get Discovered Easier',
+        desc: 'SEO and AI-optimized websites help customers find you on Google and AI search engines like ChatGPT and Perplexity.'
+      },
+      setup: {
+        title: '5-Minute Setup',
+        desc: 'Just have a quick conversation. No coding, no design skills, no technical hassle—your site is ready instantly.'
+      },
+      credibility: {
+        title: 'Instant Credibility',
+        desc: 'A polished, professional website makes your business look established and trustworthy—critical for winning new customers.'
+      }
+    },
+    howItWorks: {
+      title: 'How It Works',
+      step1: {
+        title: 'Talk to Sarah',
+        desc: 'Click the button above and have a quick conversation with our AI assistant. Tell them about your business, what you offer, and who you serve.'
+      },
+      step2: {
+        title: 'AI Builds Your Site',
+        desc: 'Our AI takes your conversation and generates a complete, professional marketing website tailored to your business in seconds.'
+      },
+      step3: {
+        title: 'Preview & Claim',
+        desc: 'See your new site instantly. Love it? Export the code, let us host it, or get premium design services to make it perfect.'
+      }
+    },
+    pricing: {
+      title: 'Simple Pricing',
+      export: {
+        title: 'Export Code',
+        price: '$49',
+        period: 'one-time',
+        features: ['Download HTML/CSS/JS', 'Host anywhere you want', 'Full ownership']
+      },
+      hosted: {
+        badge: 'Popular',
+        title: 'Hosted',
+        price: '$29',
+        period: 'per month',
+        features: ['We host it for you', 'Custom domain', 'SSL included', 'Basic analytics']
+      },
+      premium: {
+        title: 'Premium Design',
+        price: '$499+',
+        period: 'one-time',
+        features: ['Professional designer', 'Custom refinements', 'Brand alignment', 'Priority support']
+      }
+    },
+    footer: 'Built with Speak to Site'
+  },
+  es: {
+    nav: {
+      logo: 'Habla a Sitio',
+      howItWorks: 'Cómo Funciona',
+      pricing: 'Precios'
+    },
+    modal: {
+      title: '¡Tu Sitio Web Está Listo!',
+      text: 'Sarah creó un hermoso sitio web para ti. ¡Haz clic abajo para verlo!',
+      viewButton: 'Ver Tu Sitio Web',
+      close: 'Cerrar'
+    },
+    hero: {
+      title: 'Crea Tu Sitio Web',
+      titleAccent: 'Solo Hablando',
+      subtitle: 'Describe tu negocio a nuestro agente de voz AI y obtén un hermoso sitio web de marketing profesional en menos de 5 minutos. Sin programación, sin habilidades de diseño, sin complicaciones.',
+      ctaStart: 'Comienza a Crear Tu Sitio',
+      ctaConnecting: 'Conectando...',
+      ctaEnd: 'Finalizar Llamada',
+      ctaEnded: 'Llamada Finalizada',
+      callIndicator: 'Hablando con Sarah...',
+      previewReady: '¡Tu sitio está listo! ',
+      previewLink: 'Míralo aquí →',
+      freeCta: 'Vista previa gratuita - No se requiere tarjeta de crédito',
+      testButton: '🧪 Probar Modal (Joe\'s Pizza)'
+    },
+    valueProps: {
+      title: 'Obtén Más Negocios En Solo 5 Minutos',
+      subtitle: 'Mejora tu negocio profesional con una presencia en línea que genera resultados reales',
+      revenue: {
+        title: 'Aumenta Ingresos',
+        desc: 'Que más clientes te descubran y conviértelos con un sitio web profesional que genera confianza y credibilidad.'
+      },
+      discover: {
+        title: 'Sé Descubierto Más Fácil',
+        desc: 'Los sitios web optimizados para SEO e IA ayudan a los clientes a encontrarte en Google y motores de búsqueda de IA como ChatGPT y Perplexity.'
+      },
+      setup: {
+        title: 'Configuración de 5 Minutos',
+        desc: 'Solo ten una conversación rápida. Sin programación, sin habilidades de diseño, sin complicaciones técnicas—tu sitio está listo al instante.'
+      },
+      credibility: {
+        title: 'Credibilidad Instantánea',
+        desc: 'Un sitio web pulido y profesional hace que tu negocio se vea establecido y confiable—crítico para ganar nuevos clientes.'
+      }
+    },
+    howItWorks: {
+      title: 'Cómo Funciona',
+      step1: {
+        title: 'Habla con Sarah',
+        desc: 'Haz clic en el botón de arriba y ten una conversación rápida con nuestro asistente de IA. Cuéntales sobre tu negocio, lo que ofreces y a quién sirves.'
+      },
+      step2: {
+        title: 'La IA Crea Tu Sitio',
+        desc: 'Nuestra IA toma tu conversación y genera un sitio web de marketing completo y profesional adaptado a tu negocio en segundos.'
+      },
+      step3: {
+        title: 'Vista Previa y Reclama',
+        desc: 'Mira tu nuevo sitio al instante. ¿Te encanta? Exporta el código, déjanos alojarlo, o obtén servicios de diseño premium para hacerlo perfecto.'
+      }
+    },
+    pricing: {
+      title: 'Precios Simples',
+      export: {
+        title: 'Exportar Código',
+        price: '$49',
+        period: 'único pago',
+        features: ['Descargar HTML/CSS/JS', 'Alojar donde quieras', 'Propiedad completa']
+      },
+      hosted: {
+        badge: 'Popular',
+        title: 'Alojado',
+        price: '$29',
+        period: 'por mes',
+        features: ['Lo alojamos por ti', 'Dominio personalizado', 'SSL incluido', 'Análisis básicos']
+      },
+      premium: {
+        title: 'Diseño Premium',
+        price: '$499+',
+        period: 'único pago',
+        features: ['Diseñador profesional', 'Refinamientos personalizados', 'Alineación de marca', 'Soporte prioritario']
+      }
+    },
+    footer: 'Hecho con Habla a Sitio'
+  }
+}
+
 export default function Home() {
   const [isCallActive, setIsCallActive] = useState(false)
   const [callStatus, setCallStatus] = useState('idle') // idle, connecting, connected, ended
@@ -9,6 +182,7 @@ export default function Home() {
   const [previewUrl, setPreviewUrl] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [language, setLanguage] = useState('en') // 'en' or 'es'
 
   useEffect(() => {
     // Detect OS dark mode preference
@@ -118,6 +292,8 @@ export default function Home() {
     }
   }
 
+  const t = translations[language]
+
   return (
     <div style={{...styles.container, ...(isDarkMode && styles.containerDark)}}>
       {/* Success Modal */}
@@ -125,9 +301,9 @@ export default function Home() {
         <div style={styles.modalOverlay} onClick={() => setShowModal(false)}>
           <div style={styles.modal} onClick={e => e.stopPropagation()}>
             <div style={styles.modalIcon}>🎉</div>
-            <h2 style={styles.modalTitle}>Your Website is Ready!</h2>
+            <h2 style={styles.modalTitle}>{t.modal.title}</h2>
             <p style={styles.modalText}>
-              Sarah created a beautiful website for you. Click below to see it!
+              {t.modal.text}
             </p>
             <a
               href={previewUrl}
@@ -135,13 +311,13 @@ export default function Home() {
               rel="noopener noreferrer"
               style={styles.modalButton}
             >
-              View Your Website
+              {t.modal.viewButton}
             </a>
             <button
               onClick={() => setShowModal(false)}
               style={styles.modalClose}
             >
-              Close
+              {t.modal.close}
             </button>
           </div>
         </div>
@@ -149,10 +325,16 @@ export default function Home() {
 
       {/* Navigation */}
       <nav style={{...styles.nav, ...(isDarkMode && styles.navDark)}}>
-        <div style={styles.logo}>Speak to Site</div>
+        <div style={styles.logo}>{t.nav.logo}</div>
         <div style={styles.navLinks}>
-          <a href="#how-it-works" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>How It Works</a>
-          <a href="#pricing" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>Pricing</a>
+          <a href="#how-it-works" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.howItWorks}</a>
+          <a href="#pricing" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.pricing}</a>
+          <button
+            onClick={() => setLanguage(language === 'en' ? 'es' : 'en')}
+            style={{...styles.langToggle, ...(isDarkMode && styles.langToggleDark)}}
+          >
+            {language === 'en' ? '🇪🇸 ES' : '🇺🇸 EN'}
+          </button>
         </div>
       </nav>
 
@@ -160,13 +342,11 @@ export default function Home() {
       <section style={{...styles.hero, ...(isDarkMode && styles.heroDark)}}>
         <div style={styles.heroContent}>
           <h1 style={{...styles.heroTitle, ...(isDarkMode && styles.heroTitleDark)}}>
-            Build Your Website<br />
-            <span style={styles.heroAccent}>Just By Talking</span>
+            {t.hero.title}<br />
+            <span style={styles.heroAccent}>{t.hero.titleAccent}</span>
           </h1>
           <p style={{...styles.heroSubtitle, ...(isDarkMode && styles.heroSubtitleDark)}}>
-            Describe your business to our AI voice agent and get a beautiful,
-            professional marketing website in under 5 minutes. No coding, no design skills,
-            no hassle.
+            {t.hero.subtitle}
           </p>
 
           {/* CTA Button */}
@@ -182,25 +362,25 @@ export default function Home() {
             {callStatus === 'idle' && (
               <>
                 <MicIcon />
-                Start Building Your Site
+                {t.hero.ctaStart}
               </>
             )}
             {callStatus === 'connecting' && (
               <>
                 <LoadingSpinner />
-                Connecting...
+                {t.hero.ctaConnecting}
               </>
             )}
             {callStatus === 'connected' && (
               <>
                 <PhoneOffIcon />
-                End Call
+                {t.hero.ctaEnd}
               </>
             )}
             {callStatus === 'ended' && (
               <>
                 <CheckIcon />
-                Call Ended
+                {t.hero.ctaEnded}
               </>
             )}
           </button>
@@ -208,27 +388,27 @@ export default function Home() {
           {isCallActive && (
             <div style={styles.callIndicator}>
               <span style={styles.pulse}></span>
-              Speaking with Sarah...
+              {t.hero.callIndicator}
             </div>
           )}
 
           {/* Show link to preview if URL exists but modal is closed */}
           {previewUrl && !showModal && !isCallActive && (
             <div style={styles.previewLink}>
-              <span>Your site is ready! </span>
+              <span>{t.hero.previewReady}</span>
               <a
                 href={previewUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={styles.previewLinkAnchor}
               >
-                View it here →
+                {t.hero.previewLink}
               </a>
             </div>
           )}
 
           <p style={styles.heroCta}>
-            Free preview - No credit card required
+            {t.hero.freeCta}
           </p>
 
           {/* Test Modal Button - Only in development */}
@@ -241,7 +421,7 @@ export default function Home() {
               }}
               style={styles.testButton}
             >
-              🧪 Test Modal (Joe's Pizza)
+              {t.hero.testButton}
             </button>
           )}
         </div>
@@ -288,38 +468,38 @@ export default function Home() {
       <section style={{...styles.valuePropsSection, ...(isDarkMode && styles.valuePropsSectionDark)}}>
         <div style={styles.valuePropsContainer}>
           <h2 style={{...styles.valuePropsTitle, ...(isDarkMode && styles.valuePropsTitleDark)}}>
-            Get More Business In Just 5 Minutes
+            {t.valueProps.title}
           </h2>
           <p style={{...styles.valuePropsSubtitle, ...(isDarkMode && styles.valuePropsSubtitleDark)}}>
-            Uplevel your professional business with an online presence that drives real results
+            {t.valueProps.subtitle}
           </p>
           <div style={styles.valuePropsGrid}>
             <div style={{...styles.valueProp, ...(isDarkMode && styles.valuePropDark)}}>
               <div style={styles.valuePropIcon}>💰</div>
-              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>Increase Revenue</h3>
+              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>{t.valueProps.revenue.title}</h3>
               <p style={{...styles.valuePropDesc, ...(isDarkMode && styles.valuePropDescDark)}}>
-                Get discovered by more customers and convert them with a professional website that builds trust and credibility.
+                {t.valueProps.revenue.desc}
               </p>
             </div>
             <div style={{...styles.valueProp, ...(isDarkMode && styles.valuePropDark)}}>
               <div style={styles.valuePropIcon}>🔍</div>
-              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>Get Discovered Easier</h3>
+              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>{t.valueProps.discover.title}</h3>
               <p style={{...styles.valuePropDesc, ...(isDarkMode && styles.valuePropDescDark)}}>
-                SEO and AI-optimized websites help customers find you on Google and AI search engines like ChatGPT and Perplexity.
+                {t.valueProps.discover.desc}
               </p>
             </div>
             <div style={{...styles.valueProp, ...(isDarkMode && styles.valuePropDark)}}>
               <div style={styles.valuePropIcon}>⚡</div>
-              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>5-Minute Setup</h3>
+              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>{t.valueProps.setup.title}</h3>
               <p style={{...styles.valuePropDesc, ...(isDarkMode && styles.valuePropDescDark)}}>
-                Just have a quick conversation. No coding, no design skills, no technical hassle—your site is ready instantly.
+                {t.valueProps.setup.desc}
               </p>
             </div>
             <div style={{...styles.valueProp, ...(isDarkMode && styles.valuePropDark)}}>
               <div style={styles.valuePropIcon}>✨</div>
-              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>Instant Credibility</h3>
+              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>{t.valueProps.credibility.title}</h3>
               <p style={{...styles.valuePropDesc, ...(isDarkMode && styles.valuePropDescDark)}}>
-                A polished, professional website makes your business look established and trustworthy—critical for winning new customers.
+                {t.valueProps.credibility.desc}
               </p>
             </div>
           </div>
@@ -328,30 +508,27 @@ export default function Home() {
 
       {/* How It Works */}
       <section id="how-it-works" style={{...styles.section, ...(isDarkMode && styles.sectionDark)}}>
-        <h2 style={{...styles.sectionTitle, ...(isDarkMode && styles.sectionTitleDark)}}>How It Works</h2>
+        <h2 style={{...styles.sectionTitle, ...(isDarkMode && styles.sectionTitleDark)}}>{t.howItWorks.title}</h2>
         <div style={styles.steps}>
           <div style={styles.step}>
             <div style={styles.stepNumber}>1</div>
-            <h3 style={{...styles.stepTitle, ...(isDarkMode && styles.stepTitleDark)}}>Talk to Sarah</h3>
+            <h3 style={{...styles.stepTitle, ...(isDarkMode && styles.stepTitleDark)}}>{t.howItWorks.step1.title}</h3>
             <p style={{...styles.stepDesc, ...(isDarkMode && styles.stepDescDark)}}>
-              Click the button above and have a quick conversation with our AI assistant.
-              Tell them about your business, what you offer, and who you serve.
+              {t.howItWorks.step1.desc}
             </p>
           </div>
           <div style={styles.step}>
             <div style={styles.stepNumber}>2</div>
-            <h3 style={{...styles.stepTitle, ...(isDarkMode && styles.stepTitleDark)}}>AI Builds Your Site</h3>
+            <h3 style={{...styles.stepTitle, ...(isDarkMode && styles.stepTitleDark)}}>{t.howItWorks.step2.title}</h3>
             <p style={{...styles.stepDesc, ...(isDarkMode && styles.stepDescDark)}}>
-              Our AI takes your conversation and generates a complete, professional
-              marketing website tailored to your business in seconds.
+              {t.howItWorks.step2.desc}
             </p>
           </div>
           <div style={styles.step}>
             <div style={styles.stepNumber}>3</div>
-            <h3 style={{...styles.stepTitle, ...(isDarkMode && styles.stepTitleDark)}}>Preview & Claim</h3>
+            <h3 style={{...styles.stepTitle, ...(isDarkMode && styles.stepTitleDark)}}>{t.howItWorks.step3.title}</h3>
             <p style={{...styles.stepDesc, ...(isDarkMode && styles.stepDescDark)}}>
-              See your new site instantly. Love it? Export the code, let us host it,
-              or get premium design services to make it perfect.
+              {t.howItWorks.step3.desc}
             </p>
           </div>
         </div>
@@ -359,39 +536,31 @@ export default function Home() {
 
       {/* Pricing */}
       <section id="pricing" style={{...styles.pricingSection, ...(isDarkMode && styles.pricingSectionDark)}}>
-        <h2 style={{...styles.sectionTitle, ...(isDarkMode && styles.sectionTitleDark)}}>Simple Pricing</h2>
+        <h2 style={{...styles.sectionTitle, ...(isDarkMode && styles.sectionTitleDark)}}>{t.pricing.title}</h2>
         <div style={styles.pricingCards}>
           <div style={{...styles.pricingCard, ...(isDarkMode && styles.pricingCardDark)}}>
-            <h3 style={styles.pricingTitle}>Export Code</h3>
-            <div style={styles.pricingPrice}>$49</div>
-            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>one-time</p>
+            <h3 style={styles.pricingTitle}>{t.pricing.export.title}</h3>
+            <div style={styles.pricingPrice}>{t.pricing.export.price}</div>
+            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>{t.pricing.export.period}</p>
             <ul style={styles.pricingFeatures}>
-              <li>Download HTML/CSS/JS</li>
-              <li>Host anywhere you want</li>
-              <li>Full ownership</li>
+              {t.pricing.export.features.map((feature, i) => <li key={i}>{feature}</li>)}
             </ul>
           </div>
           <div style={{ ...styles.pricingCard, ...styles.pricingCardFeatured, ...(isDarkMode && styles.pricingCardDark) }}>
-            <div style={styles.pricingBadge}>Popular</div>
-            <h3 style={styles.pricingTitle}>Hosted</h3>
-            <div style={styles.pricingPrice}>$29</div>
-            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>per month</p>
+            <div style={styles.pricingBadge}>{t.pricing.hosted.badge}</div>
+            <h3 style={styles.pricingTitle}>{t.pricing.hosted.title}</h3>
+            <div style={styles.pricingPrice}>{t.pricing.hosted.price}</div>
+            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>{t.pricing.hosted.period}</p>
             <ul style={styles.pricingFeatures}>
-              <li>We host it for you</li>
-              <li>Custom domain</li>
-              <li>SSL included</li>
-              <li>Basic analytics</li>
+              {t.pricing.hosted.features.map((feature, i) => <li key={i}>{feature}</li>)}
             </ul>
           </div>
           <div style={{...styles.pricingCard, ...(isDarkMode && styles.pricingCardDark)}}>
-            <h3 style={styles.pricingTitle}>Premium Design</h3>
-            <div style={styles.pricingPrice}>$499+</div>
-            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>one-time</p>
+            <h3 style={styles.pricingTitle}>{t.pricing.premium.title}</h3>
+            <div style={styles.pricingPrice}>{t.pricing.premium.price}</div>
+            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>{t.pricing.premium.period}</p>
             <ul style={styles.pricingFeatures}>
-              <li>Professional designer</li>
-              <li>Custom refinements</li>
-              <li>Brand alignment</li>
-              <li>Priority support</li>
+              {t.pricing.premium.features.map((feature, i) => <li key={i}>{feature}</li>)}
             </ul>
           </div>
         </div>
@@ -399,7 +568,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer style={{...styles.footer, ...(isDarkMode && styles.footerDark)}}>
-        <p>Built with Speak to Site</p>
+        <p>{t.footer}</p>
       </footer>
 
       <style jsx global>{`
@@ -573,11 +742,23 @@ const styles = {
   navLinks: {
     display: 'flex',
     gap: '32px',
+    alignItems: 'center',
   },
   navLink: {
     color: '#555',
     textDecoration: 'none',
     fontWeight: '500',
+  },
+  langToggle: {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    fontWeight: '600',
+    fontSize: '14px',
+    cursor: 'pointer',
+    transition: 'transform 0.2s',
   },
   hero: {
     display: 'flex',
@@ -923,6 +1104,10 @@ const styles = {
   },
   navLinkDark: {
     color: '#b0b0b0',
+  },
+  langToggleDark: {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    opacity: '0.9',
   },
   heroDark: {
     background: '#0a0a0a',
