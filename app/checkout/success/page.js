@@ -1,5 +1,7 @@
 import { getStripe, getSupabase } from '../../api/_lib/clients'
 
+export const dynamic = 'force-dynamic'
+
 export default async function CheckoutSuccessPage({ searchParams }) {
   const stripe = getStripe()
   const supabase = getSupabase()
