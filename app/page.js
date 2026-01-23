@@ -149,13 +149,13 @@ export default function Home() {
       <section style={{...styles.hero, ...(isDarkMode && styles.heroDark)}}>
         <div style={styles.heroContent}>
           <h1 style={{...styles.heroTitle, ...(isDarkMode && styles.heroTitleDark)}}>
-            Build Your Website<br />
-            <span style={styles.heroAccent}>Just By Talking</span>
+            Get More Business<br />
+            <span style={styles.heroAccent}>In Just 5 Minutes</span>
           </h1>
           <p style={{...styles.heroSubtitle, ...(isDarkMode && styles.heroSubtitleDark)}}>
-            Describe your business to our AI voice agent and get a beautiful,
-            professional marketing website in under 5 minutes. No coding, no design skills,
-            no hassle.
+            Uplevel your professional business with an SEO and AI-optimized website.
+            Gain instant credibility, get discovered easier, and convert more customers—all
+            by having a 5-minute conversation. No coding, no design skills required.
           </p>
 
           {/* CTA Button */}
@@ -828,7 +828,7 @@ const styles = {
     background: '#0a0a0a',
   },
   heroTitleDark: {
-    color: '#ffffff',
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   heroSubtitleDark: {
     color: '#b0b0b0',
@@ -837,10 +837,10 @@ const styles = {
     background: '#0a0a0a',
   },
   sectionTitleDark: {
-    color: '#ffffff',
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   stepTitleDark: {
-    color: '#ffffff',
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   stepDescDark: {
     color: '#b0b0b0',
