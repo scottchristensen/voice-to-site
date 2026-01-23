@@ -3,8 +3,6 @@ import Stripe from 'stripe'
 // Force dynamic rendering - don't pre-render at build time
 export const dynamic = 'force-dynamic'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-
 // Product pricing configuration
 const PRODUCTS = {
   custom_url: {
@@ -32,6 +30,9 @@ const PRODUCTS = {
 
 export async function POST(request) {
   try {
+    // Initialize Stripe at runtime
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+
     const body = await request.json()
     const { siteId, productType, email, customSlug } = body
 
