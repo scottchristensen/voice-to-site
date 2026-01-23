@@ -149,13 +149,13 @@ export default function Home() {
       <section style={{...styles.hero, ...(isDarkMode && styles.heroDark)}}>
         <div style={styles.heroContent}>
           <h1 style={{...styles.heroTitle, ...(isDarkMode && styles.heroTitleDark)}}>
-            Get More Business<br />
-            <span style={styles.heroAccent}>In Just 5 Minutes</span>
+            Build Your Website<br />
+            <span style={styles.heroAccent}>Just By Talking</span>
           </h1>
           <p style={{...styles.heroSubtitle, ...(isDarkMode && styles.heroSubtitleDark)}}>
-            Uplevel your professional business with an SEO and AI-optimized website.
-            Gain instant credibility, get discovered easier, and convert more customers—all
-            by having a 5-minute conversation. No coding, no design skills required.
+            Describe your business to our AI voice agent and get a beautiful,
+            professional marketing website in under 5 minutes. No coding, no design skills,
+            no hassle.
           </p>
 
           {/* CTA Button */}
@@ -268,6 +268,48 @@ export default function Home() {
                   <div style={styles.mockupLineShort}></div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Value Propositions */}
+      <section style={{...styles.valuePropsSection, ...(isDarkMode && styles.valuePropsSectionDark)}}>
+        <div style={styles.valuePropsContainer}>
+          <h2 style={{...styles.valuePropsTitle, ...(isDarkMode && styles.valuePropsTitleDark)}}>
+            Get More Business In Just 5 Minutes
+          </h2>
+          <p style={{...styles.valuePropsSubtitle, ...(isDarkMode && styles.valuePropsSubtitleDark)}}>
+            Uplevel your professional business with an online presence that drives real results
+          </p>
+          <div style={styles.valuePropsGrid}>
+            <div style={{...styles.valueProp, ...(isDarkMode && styles.valuePropDark)}}>
+              <div style={styles.valuePropIcon}>💰</div>
+              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>Increase Revenue</h3>
+              <p style={{...styles.valuePropDesc, ...(isDarkMode && styles.valuePropDescDark)}}>
+                Get discovered by more customers and convert them with a professional website that builds trust and credibility.
+              </p>
+            </div>
+            <div style={{...styles.valueProp, ...(isDarkMode && styles.valuePropDark)}}>
+              <div style={styles.valuePropIcon}>🔍</div>
+              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>Get Discovered Easier</h3>
+              <p style={{...styles.valuePropDesc, ...(isDarkMode && styles.valuePropDescDark)}}>
+                SEO and AI-optimized websites help customers find you on Google and AI search engines like ChatGPT and Perplexity.
+              </p>
+            </div>
+            <div style={{...styles.valueProp, ...(isDarkMode && styles.valuePropDark)}}>
+              <div style={styles.valuePropIcon}>⚡</div>
+              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>5-Minute Setup</h3>
+              <p style={{...styles.valuePropDesc, ...(isDarkMode && styles.valuePropDescDark)}}>
+                Just have a quick conversation. No coding, no design skills, no technical hassle—your site is ready instantly.
+              </p>
+            </div>
+            <div style={{...styles.valueProp, ...(isDarkMode && styles.valuePropDark)}}>
+              <div style={styles.valuePropIcon}>✨</div>
+              <h3 style={{...styles.valuePropTitle, ...(isDarkMode && styles.valuePropTitleDark)}}>Instant Credibility</h3>
+              <p style={{...styles.valuePropDesc, ...(isDarkMode && styles.valuePropDescDark)}}>
+                A polished, professional website makes your business look established and trustworthy—critical for winning new customers.
+              </p>
             </div>
           </div>
         </div>
@@ -812,6 +854,53 @@ const styles = {
     padding: '40px',
     color: '#888',
   },
+  // Value Props Section
+  valuePropsSection: {
+    padding: '80px 40px',
+    background: '#f8f9fa',
+  },
+  valuePropsContainer: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+  },
+  valuePropsTitle: {
+    fontSize: '36px',
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: '16px',
+  },
+  valuePropsSubtitle: {
+    fontSize: '18px',
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: '48px',
+  },
+  valuePropsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '32px',
+  },
+  valueProp: {
+    background: 'white',
+    padding: '32px',
+    borderRadius: '12px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+    textAlign: 'center',
+  },
+  valuePropIcon: {
+    fontSize: '48px',
+    marginBottom: '16px',
+  },
+  valuePropTitle: {
+    fontSize: '20px',
+    fontWeight: '600',
+    marginBottom: '12px',
+  },
+  valuePropDesc: {
+    color: '#666',
+    lineHeight: '1.6',
+    fontSize: '15px',
+  },
   // Dark mode styles
   containerDark: {
     background: '#0a0a0a',
@@ -859,5 +948,24 @@ const styles = {
     background: '#0a0a0a',
     borderTop: '1px solid #222',
     color: '#666',
+  },
+  valuePropsSectionDark: {
+    background: '#111',
+  },
+  valuePropsTitleDark: {
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  valuePropsSubtitleDark: {
+    color: '#b0b0b0',
+  },
+  valuePropDark: {
+    background: '#1a1a1a',
+    border: '1px solid #333',
+  },
+  valuePropTitleDark: {
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  valuePropDescDark: {
+    color: '#b0b0b0',
   },
 }
