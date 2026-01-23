@@ -125,7 +125,7 @@ export default function Home() {
 
       {/* Navigation */}
       <nav style={styles.nav}>
-        <div style={styles.logo}>VoiceSite</div>
+        <div style={styles.logo}>Speak to Site</div>
         <div style={styles.navLinks}>
           <a href="#how-it-works" style={styles.navLink}>How It Works</a>
           <a href="#pricing" style={styles.navLink}>Pricing</a>
@@ -224,18 +224,36 @@ export default function Home() {
 
         {/* Demo Preview */}
         <div style={styles.heroImage}>
-          <div style={styles.browserMockup}>
-            <div style={styles.browserBar}>
-              <span style={styles.browserDot}></span>
-              <span style={styles.browserDot}></span>
-              <span style={styles.browserDot}></span>
+          <div style={styles.interactionMockup}>
+            {/* Microphone/Voice Indicator */}
+            <div style={styles.microphoneContainer}>
+              <div style={styles.soundWave}></div>
+              <div style={styles.soundWave}></div>
+              <div style={styles.soundWave}></div>
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={styles.microphoneIcon}>
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" x2="12" y1="19" y2="22"></line>
+              </svg>
             </div>
-            <div style={styles.browserContent}>
-              <div style={styles.mockupHero}></div>
-              <div style={styles.mockupContent}>
-                <div style={styles.mockupLine}></div>
-                <div style={styles.mockupLine}></div>
-                <div style={styles.mockupLineShort}></div>
+
+            {/* Arrow pointing to website */}
+            <div style={styles.arrow}>→</div>
+
+            {/* Generated Website Preview */}
+            <div style={styles.browserMockup}>
+              <div style={styles.browserBar}>
+                <span style={styles.browserDot}></span>
+                <span style={styles.browserDot}></span>
+                <span style={styles.browserDot}></span>
+              </div>
+              <div style={styles.browserContent}>
+                <div style={styles.mockupHero}></div>
+                <div style={styles.mockupContent}>
+                  <div style={styles.mockupLine}></div>
+                  <div style={styles.mockupLine}></div>
+                  <div style={styles.mockupLineShort}></div>
+                </div>
               </div>
             </div>
           </div>
@@ -315,7 +333,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer style={styles.footer}>
-        <p>Built with VoiceSite</p>
+        <p>Built with Speak to Site</p>
       </footer>
 
       <style jsx global>{`
@@ -325,6 +343,25 @@ export default function Home() {
         }
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        @keyframes ripple {
+          0% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1.5);
+            opacity: 0;
+          }
+        }
+        .interactionMockup .soundWave:nth-child(1) {
+          animation-delay: 0s;
+        }
+        .interactionMockup .soundWave:nth-child(2) {
+          animation-delay: 0.3s;
+        }
+        .interactionMockup .soundWave:nth-child(3) {
+          animation-delay: 0.6s;
         }
         * {
           margin: 0;
@@ -568,9 +605,44 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
   },
+  interactionMockup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '24px',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  microphoneContainer: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '120px',
+    height: '120px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    borderRadius: '50%',
+    boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
+  },
+  soundWave: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: '50%',
+    border: '2px solid rgba(255, 255, 255, 0.4)',
+    animation: 'ripple 2s ease-out infinite',
+  },
+  microphoneIcon: {
+    position: 'relative',
+    zIndex: 1,
+  },
+  arrow: {
+    fontSize: '48px',
+    color: '#667eea',
+    fontWeight: 'bold',
+  },
   browserMockup: {
     width: '100%',
-    maxWidth: '500px',
+    maxWidth: '280px',
     background: 'white',
     borderRadius: '12px',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
