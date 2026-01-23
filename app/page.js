@@ -206,6 +206,20 @@ export default function Home() {
           <p style={styles.heroCta}>
             Free preview - No credit card required
           </p>
+
+          {/* Test Modal Button - Only in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={() => {
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+                setPreviewUrl(`${baseUrl}/preview/1`)
+                setShowModal(true)
+              }}
+              style={styles.testButton}
+            >
+              🧪 Test Modal (Joe's Pizza)
+            </button>
+          )}
         </div>
 
         {/* Demo Preview */}
@@ -536,6 +550,17 @@ const styles = {
     marginTop: '16px',
     color: '#888',
     fontSize: '14px',
+  },
+  testButton: {
+    marginTop: '16px',
+    padding: '8px 16px',
+    background: '#f0f0f0',
+    border: '1px solid #ccc',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    color: '#666',
+    fontFamily: 'system-ui',
   },
   heroImage: {
     flex: '1',
