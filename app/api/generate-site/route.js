@@ -4,17 +4,16 @@ import { createClient } from '@supabase/supabase-js'
 // Force dynamic rendering - don't pre-render at build time
 export const dynamic = 'force-dynamic'
 
-// Initialize Supabase
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
-
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-
 export async function POST(request) {
   try {
+    // Initialize Supabase
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_KEY
+    )
+
+    // Initialize Gemini
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
     const body = await request.json()
 
     console.log('Received request body:', JSON.stringify(body, null, 2))
