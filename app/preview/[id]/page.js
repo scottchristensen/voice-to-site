@@ -1,10 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 
 // Calculate days remaining
 function getDaysRemaining(createdAt) {
@@ -17,6 +14,12 @@ function getDaysRemaining(createdAt) {
 
 export default async function PreviewPage({ params }) {
   const { id } = await params
+
+  // Initialize Supabase client
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY
+  )
 
   // Fetch the site from database
   const { data: site, error } = await supabase
