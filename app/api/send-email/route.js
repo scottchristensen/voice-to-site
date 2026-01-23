@@ -1,6 +1,8 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+
 const resend = new Resend(process.env.RESEND_API_KEY)
 const supabase = createClient(
   process.env.SUPABASE_URL,
