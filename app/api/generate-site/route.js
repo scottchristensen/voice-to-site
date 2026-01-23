@@ -1,16 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
-import { createClient } from '@supabase/supabase-js'
+import { getGemini, getSupabase } from '../_lib/clients'
 
 export const dynamic = 'force-dynamic'
-
-// Initialize Supabase
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
-
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 // Generate a URL-friendly slug from business name
 function generateSlug(businessName) {
@@ -34,7 +24,7 @@ function generateSlug(businessName) {
 }
 
 // Get unique slug (add random suffix if needed)
-async function getUniqueSlug(baseSlug) {
+async function getUniqueSlug(baseSlug, supabase) {
   if (!baseSlug) {
     // Generate random slug if no business name
     return `site-${Math.random().toString(36).substring(2, 8)}`
@@ -57,6 +47,9 @@ async function getUniqueSlug(baseSlug) {
 
 export async function POST(request) {
   try {
+    const supabase = getSupabase()
+    const genAI = getGemini()
+
     const body = await request.json()
 
     console.log('Received request body:', JSON.stringify(body, null, 2))
@@ -139,7 +132,7 @@ export async function POST(request) {
 
     // Generate a unique slug for this site
     const baseSlug = generateSlug(requirements.businessName)
-    const slug = await getUniqueSlug(baseSlug)
+    const slug = await getUniqueSlug(baseSlug, supabase)
     console.log('Generated slug:', slug)
 
     // Save to Supabase

@@ -1,14 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabase } from '../_lib/clients'
 
 export const dynamic = 'force-dynamic'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
-
 export async function POST(request) {
   try {
+    const supabase = getSupabase()
+
     const body = await request.json()
     const { siteId, email, customSlug, claimType } = body
 

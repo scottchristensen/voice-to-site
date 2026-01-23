@@ -1,16 +1,12 @@
-import { Resend } from 'resend'
-import { createClient } from '@supabase/supabase-js'
+import { getResend, getSupabase } from '../_lib/clients'
 
 export const dynamic = 'force-dynamic'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
-
 export async function POST(request) {
   try {
+    const resend = getResend()
+    const supabase = getSupabase()
+
     const body = await request.json()
     const { siteId, email, type = 'preview' } = body
 

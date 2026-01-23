@@ -1,15 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
+import { getResend, getSupabase } from '../../_lib/clients'
 
 export const dynamic = 'force-dynamic'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function GET(request) {
+  const supabase = getSupabase()
+  const resend = getResend()
+
   // Verify cron secret in production (Vercel sets this header)
   const authHeader = request.headers.get('authorization')
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

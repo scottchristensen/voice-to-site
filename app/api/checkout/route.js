@@ -1,4 +1,4 @@
-import Stripe from 'stripe'
+import { getStripe } from '../_lib/clients'
 
 // Force dynamic rendering - don't pre-render at build time
 export const dynamic = 'force-dynamic'
@@ -30,8 +30,7 @@ const PRODUCTS = {
 
 export async function POST(request) {
   try {
-    // Initialize Stripe at runtime
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+    const stripe = getStripe()
 
     const body = await request.json()
     const { siteId, productType, email, customSlug } = body

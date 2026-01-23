@@ -1,15 +1,11 @@
-import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { getStripe, getSupabase } from '../_lib/clients'
 
 export const dynamic = 'force-dynamic'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
-
 export async function POST(request) {
+  const stripe = getStripe()
+  const supabase = getSupabase()
+
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
 
