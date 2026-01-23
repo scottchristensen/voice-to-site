@@ -115,7 +115,7 @@ export async function POST(request) {
             toolCallId: toolCallId || 'unknown',
             result: 'Sorry, there was an error saving your website. Please try again.'
           }]
-        })
+        }, { status: 200 })
       }
       return Response.json({ error: 'Failed to save site', details: error.message }, { status: 500 })
     }
@@ -133,7 +133,7 @@ export async function POST(request) {
           toolCallId: toolCallId,
           result: `Great news! Your website is ready! You can view it at: ${previewUrl}`
         }]
-      })
+      }, { status: 200 })
     }
 
     return Response.json({
@@ -155,7 +155,7 @@ export async function POST(request) {
           toolCallId: toolCallId,
           result: `Sorry, there was an error generating your website: ${error.message}. Please try again.`
         }]
-      })
+      }, { status: 200 })
     }
 
     return Response.json({ error: error.message }, { status: 500 })
