@@ -51,29 +51,40 @@ export default function Home() {
 
         // Listen for messages to capture the preview URL
         vapiInstance.on('message', (message) => {
-          console.log('Vapi message:', message)
+          console.log('Vapi message received:', message)
+          console.log('Message type:', message.type)
 
-          // Check for tool call results that contain our preview URL
+          // Try to extract URL from various message formats
+          let textToSearch = ''
+
+          // Check for tool call results
           if (message.type === 'tool-call-result' || message.type === 'function-call-result') {
-            const result = message.result || message.output || ''
-            // Extract URL from the result
-            const urlMatch = result.match(/https?:\/\/[^\s]+\/preview\/[^\s]+/)
-            if (urlMatch) {
-              const url = urlMatch[0].replace(/[.,!?]$/, '') // Remove trailing punctuation
-              console.log('Found preview URL:', url)
-              setPreviewUrl(url)
-              setShowModal(true)
-            }
+            textToSearch = message.result || message.output || ''
+            console.log('Tool call result text:', textToSearch)
           }
 
-          // Also check transcript for URL (backup method)
+          // Check transcript
           if (message.type === 'transcript' && message.transcript) {
-            const urlMatch = message.transcript.match(/https?:\/\/[^\s]+\/preview\/[^\s]+/)
-            if (urlMatch && !previewUrl) {
-              const url = urlMatch[0].replace(/[.,!?]$/, '')
-              console.log('Found preview URL in transcript:', url)
+            textToSearch = message.transcript
+            console.log('Transcript text:', textToSearch)
+          }
+
+          // Check if entire message object contains URL (stringify and search)
+          if (!textToSearch) {
+            textToSearch = JSON.stringify(message)
+            console.log('Searching entire message object for URL')
+          }
+
+          // Extract URL from whatever text we found
+          if (textToSearch) {
+            const urlMatch = textToSearch.match(/https?:\/\/[^\s"',]+\/preview\/[^\s"',]+/)
+            if (urlMatch) {
+              const url = urlMatch[0].replace(/[.,!?]$/, '') // Remove trailing punctuation
+              console.log('✅ Found preview URL:', url)
               setPreviewUrl(url)
               setShowModal(true)
+            } else {
+              console.log('❌ No preview URL found in text')
             }
           }
         })
