@@ -1,11 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
+import { getSupabase } from '../../api/_lib/clients'
 
 export async function generateMetadata({ params }) {
+  const supabase = getSupabase()
   const { slug } = await params
 
   const { data: site } = await supabase
@@ -25,6 +21,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function PublishedSitePage({ params }) {
+  const supabase = getSupabase()
   const { slug } = await params
 
   // Fetch the site by slug
