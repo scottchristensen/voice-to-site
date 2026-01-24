@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 // Calculate days remaining
 function getDaysRemaining(createdAt) {
   const created = new Date(createdAt)
-  const expires = new Date(created.getTime() + 14 * 24 * 60 * 60 * 1000) // 14 days
+  const expires = new Date(created.getTime() + 1 * 24 * 60 * 60 * 1000) // 1 day
   const now = new Date()
   const diff = expires - now
   return Math.ceil(diff / (1000 * 60 * 60 * 24))
