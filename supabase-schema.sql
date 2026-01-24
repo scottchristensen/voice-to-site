@@ -124,3 +124,43 @@ WHERE stripe_customer_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_generated_sites_stripe_subscription
 ON generated_sites(stripe_subscription_id)
 WHERE stripe_subscription_id IS NOT NULL;
+
+-- =============================================
+-- FORM SUBMISSIONS TABLE
+-- Stores contact form submissions from claimed sites
+-- =============================================
+
+CREATE TABLE IF NOT EXISTS form_submissions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+  site_id BIGINT REFERENCES generated_sites(id) ON DELETE CASCADE,
+  form_type TEXT DEFAULT 'contact', -- 'contact', 'quote', 'newsletter', etc.
+  name TEXT,
+  email TEXT,
+  phone TEXT,
+  message TEXT,
+  form_data JSONB, -- For any additional form fields
+  email_sent BOOLEAN DEFAULT false,
+  email_sent_at TIMESTAMPTZ
+);
+
+-- Index for fast lookups by site
+CREATE INDEX IF NOT EXISTS idx_form_submissions_site_id
+ON form_submissions(site_id);
+
+-- Index for chronological queries
+CREATE INDEX IF NOT EXISTS idx_form_submissions_created_at
+ON form_submissions(created_at DESC);
+
+-- Enable RLS
+ALTER TABLE form_submissions ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Allow anyone to insert submissions (forms are public)
+CREATE POLICY "Allow public form submissions" ON form_submissions
+  FOR INSERT
+  WITH CHECK (true);
+
+-- Policy: Allow reading submissions (for site owners - will add auth later)
+CREATE POLICY "Allow reading submissions" ON form_submissions
+  FOR SELECT
+  USING (true);

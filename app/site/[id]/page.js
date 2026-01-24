@@ -78,13 +78,103 @@ export default async function SitePage({ params }) {
     )
   }
 
-  // Render the site's HTML directly
+  // Form handling script to inject
+  const formHandlerScript = `
+    (function() {
+      const SITE_ID = '${id}';
+      const API_URL = 'https://www.speakyour.site/api/form-submit';
+
+      // Find all forms on the page
+      document.addEventListener('DOMContentLoaded', function() {
+        const forms = document.querySelectorAll('form');
+
+        forms.forEach(function(form) {
+          form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+            const originalText = submitBtn ? submitBtn.textContent || submitBtn.value : '';
+
+            // Show loading state
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              if (submitBtn.tagName === 'BUTTON') {
+                submitBtn.textContent = 'Sending...';
+              } else {
+                submitBtn.value = 'Sending...';
+              }
+            }
+
+            // Extract common form fields
+            const data = {
+              siteId: SITE_ID,
+              name: formData.get('name') || formData.get('full_name') || formData.get('fullname') || '',
+              email: formData.get('email') || formData.get('e-mail') || '',
+              phone: formData.get('phone') || formData.get('tel') || formData.get('telephone') || '',
+              message: formData.get('message') || formData.get('comments') || formData.get('inquiry') || '',
+              formType: form.getAttribute('data-form-type') || 'contact',
+              additionalFields: {}
+            };
+
+            // Capture any additional fields
+            for (const [key, value] of formData.entries()) {
+              if (!['name', 'full_name', 'fullname', 'email', 'e-mail', 'phone', 'tel', 'telephone', 'message', 'comments', 'inquiry'].includes(key)) {
+                data.additionalFields[key] = value;
+              }
+            }
+
+            try {
+              const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+              });
+
+              const result = await response.json();
+
+              if (response.ok) {
+                // Show success message
+                const successMsg = document.createElement('div');
+                successMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:16px 24px;border-radius:8px;font-family:system-ui;font-weight:500;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+                successMsg.textContent = 'Thank you! Your message has been sent.';
+                document.body.appendChild(successMsg);
+                setTimeout(() => successMsg.remove(), 5000);
+                form.reset();
+              } else {
+                throw new Error(result.error || 'Failed to send');
+              }
+            } catch (err) {
+              const errorMsg = document.createElement('div');
+              errorMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ef4444;color:white;padding:16px 24px;border-radius:8px;font-family:system-ui;font-weight:500;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+              errorMsg.textContent = 'Sorry, there was an error. Please try again.';
+              document.body.appendChild(errorMsg);
+              setTimeout(() => errorMsg.remove(), 5000);
+            } finally {
+              // Restore button state
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                if (submitBtn.tagName === 'BUTTON') {
+                  submitBtn.textContent = originalText;
+                } else {
+                  submitBtn.value = originalText;
+                }
+              }
+            }
+          });
+        });
+      });
+    })();
+  `;
+
+  // Render the site's HTML directly with form handler
   return (
     <html>
       <head>
         <title>{site.business_name || 'Website'}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="generator" content="SpeakYour.Site" />
+        <script dangerouslySetInnerHTML={{ __html: formHandlerScript }} />
       </head>
       <body
         dangerouslySetInnerHTML={{ __html: site.html_code }}
