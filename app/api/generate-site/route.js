@@ -78,30 +78,30 @@ export async function POST(request) {
     // Build the prompt for Gemini
     const prompt = buildWebsitePrompt(requirements)
 
-    // Call Gemini 3 Pro for higher quality website generation
+    // Call Gemini 1.5 Pro for higher quality website generation
     // Requires Vercel Pro plan (60s timeout) - configured via maxDuration above
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-1.5-pro',
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 64000, // Increased from 32000 - Gemini 3 Pro supports up to 64K tokens
+        maxOutputTokens: 8192, // Gemini 1.5 Pro output limit
       }
     })
 
-    console.log('[3/4] Calling Gemini 3 Pro (may take 10-20 seconds)...')
+    console.log('[3/4] Calling Gemini 1.5 Pro (may take 10-20 seconds)...')
     const startTime = Date.now()
 
     let htmlCode
     try {
       const result = await model.generateContent(prompt)
       const duration = (Date.now() - startTime) / 1000
-      console.log(`✅ Gemini 3 Pro completed in ${duration.toFixed(2)}s`)
+      console.log(`✅ Gemini 1.5 Pro completed in ${duration.toFixed(2)}s`)
 
       htmlCode = result.response.text()
     } catch (error) {
       // Enhanced error handling for timeout scenarios
       if (error.message?.includes('timeout') || error.code === 'DEADLINE_EXCEEDED') {
-        console.error('Gemini 3 Pro timeout error:', error)
+        console.error('Gemini 1.5 Pro timeout error:', error)
 
         if (isVapiRequest) {
           return Response.json({
