@@ -12,7 +12,8 @@
     "@vapi-ai/web": "^2.5.2",
     "next": "^16.1.4",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "stripe": "^20.2.0"
   },
   "devDependencies": {
     "dotenv": "^17.2.3"

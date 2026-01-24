@@ -93,3 +93,34 @@ ORDER BY total DESC;
 -- Note: Sites are NEVER deleted. The 14-day "expiration" is just
 -- a marketing message shown in the UI to create urgency.
 -- All data is kept for historical analytics.
+
+-- =============================================
+-- MIGRATION: Site Claiming Feature
+-- Run this if the table already exists
+-- =============================================
+
+-- Add subdomain column (unique, for custom URLs)
+ALTER TABLE generated_sites
+ADD COLUMN IF NOT EXISTS subdomain TEXT UNIQUE;
+
+-- Add Stripe-related columns
+ALTER TABLE generated_sites
+ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT,
+ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT,
+ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'none';
+-- subscription_status values: 'none', 'active', 'past_due', 'cancelled'
+
+-- Create index for fast subdomain lookups (critical for middleware performance)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_generated_sites_subdomain
+ON generated_sites(subdomain)
+WHERE subdomain IS NOT NULL;
+
+-- Create index for Stripe customer lookups
+CREATE INDEX IF NOT EXISTS idx_generated_sites_stripe_customer
+ON generated_sites(stripe_customer_id)
+WHERE stripe_customer_id IS NOT NULL;
+
+-- Create index for subscription lookups
+CREATE INDEX IF NOT EXISTS idx_generated_sites_stripe_subscription
+ON generated_sites(stripe_subscription_id)
+WHERE stripe_subscription_id IS NOT NULL;

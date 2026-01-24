@@ -1,0 +1,88 @@
+import { NextResponse } from 'next/server'
+
+export const config = {
+  matcher: [
+    // Match all paths except static files, api routes, and Next.js internals
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+  ],
+}
+
+export async function middleware(request) {
+  const url = request.nextUrl
+  const hostname = request.headers.get('host') || ''
+
+  // Define allowed hosts (main domain variations)
+  const mainHosts = [
+    'speakyour.site',
+    'www.speakyour.site',
+    'localhost:3000',
+    'localhost',
+  ]
+
+  // Check if this is the main domain (not a subdomain)
+  if (mainHosts.some(host => hostname === host)) {
+    return NextResponse.next()
+  }
+
+  // Extract subdomain from hostname
+  let subdomain = null
+
+  if (hostname.includes('.speakyour.site')) {
+    // Production: mybusiness.speakyour.site
+    const parts = hostname.split('.speakyour.site')[0]
+    if (parts && parts !== 'www') {
+      subdomain = parts
+    }
+  } else if (hostname.includes('.localhost')) {
+    // Local development: mybusiness.localhost:3000
+    const parts = hostname.split('.localhost')[0]
+    if (parts) {
+      subdomain = parts
+    }
+  }
+
+  // If no subdomain detected, proceed normally
+  if (!subdomain) {
+    return NextResponse.next()
+  }
+
+  // Look up the site by subdomain
+  // Note: We make a fetch to our own API to avoid importing Supabase in middleware edge runtime
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+  try {
+    const response = await fetch(`${baseUrl}/api/lookup-subdomain?subdomain=${subdomain}`, {
+      headers: {
+        'x-middleware-request': 'true'
+      }
+    })
+
+    if (!response.ok) {
+      // Subdomain not found - redirect to main site
+      return NextResponse.redirect(new URL('/', baseUrl))
+    }
+
+    const data = await response.json()
+
+    if (!data.siteId) {
+      return NextResponse.redirect(new URL('/', baseUrl))
+    }
+
+    // Check if site is active
+    if (data.subscriptionStatus !== 'active' || data.paymentStatus !== 'paid') {
+      // Site not paid or subscription lapsed - redirect to preview with message
+      return NextResponse.redirect(
+        new URL(`/preview/${data.siteId}?expired=subscription`, baseUrl)
+      )
+    }
+
+    // Rewrite to the site render route
+    url.pathname = `/site/${data.siteId}`
+    return NextResponse.rewrite(url)
+
+  } catch (error) {
+    console.error('Middleware error:', error)
+    // On error, redirect to main site
+    return NextResponse.redirect(new URL('/', baseUrl))
+  }
+}
