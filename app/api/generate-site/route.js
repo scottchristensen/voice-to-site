@@ -4,6 +4,10 @@ import { createClient } from '@supabase/supabase-js'
 // Force dynamic rendering - don't pre-render at build time
 export const dynamic = 'force-dynamic'
 
+// Set maximum execution time to 55 seconds (just under Vercel Pro's 60s limit)
+// This allows time for Gemini 3 Pro to generate higher-quality websites
+export const maxDuration = 55
+
 export async function POST(request) {
   try {
     // Initialize Supabase
@@ -67,24 +71,56 @@ export async function POST(request) {
       return Response.json(errorResponse, { status: 400 })
     }
 
+    console.log('[1/4] Parsing requirements...')
     console.log('Parsed requirements:', requirements)
 
+    console.log('[2/4] Building prompt...')
     // Build the prompt for Gemini
     const prompt = buildWebsitePrompt(requirements)
 
-    // Call Gemini 2.0 Flash (faster, fits within Vercel's 10s timeout)
-    // Note: Upgrade to Vercel Pro for 60s timeout to use Gemini 3 Pro
+    // Call Gemini 3 Pro for higher quality website generation
+    // Requires Vercel Pro plan (60s timeout) - configured via maxDuration above
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3-pro-preview',
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 32000,
+        maxOutputTokens: 64000, // Increased from 32000 - Gemini 3 Pro supports up to 64K tokens
       }
     })
 
-    console.log('Calling Gemini to generate website...')
-    const result = await model.generateContent(prompt)
-    const htmlCode = result.response.text()
+    console.log('[3/4] Calling Gemini 3 Pro (may take 10-20 seconds)...')
+    const startTime = Date.now()
+
+    let htmlCode
+    try {
+      const result = await model.generateContent(prompt)
+      const duration = (Date.now() - startTime) / 1000
+      console.log(`✅ Gemini 3 Pro completed in ${duration.toFixed(2)}s`)
+
+      htmlCode = result.response.text()
+    } catch (error) {
+      // Enhanced error handling for timeout scenarios
+      if (error.message?.includes('timeout') || error.code === 'DEADLINE_EXCEEDED') {
+        console.error('Gemini 3 Pro timeout error:', error)
+
+        if (isVapiRequest) {
+          return Response.json({
+            results: [{
+              toolCallId: toolCallId || 'unknown',
+              result: 'Sorry, the website generation took longer than expected. This is unusual - please try again and it should work.'
+            }]
+          }, { status: 200 })
+        }
+
+        return Response.json({
+          error: 'Website generation timeout',
+          details: 'The AI took too long to generate your site. Please try again.'
+        }, { status: 504 })
+      }
+
+      // Re-throw other errors to be caught by outer try-catch
+      throw error
+    }
 
     // Clean up the response (remove markdown code blocks if present)
     const cleanedHtml = htmlCode
@@ -94,6 +130,7 @@ export async function POST(request) {
 
     console.log('Generated HTML length:', cleanedHtml.length)
 
+    console.log('[4/4] Saving to database...')
     // Save to Supabase
     const { data, error } = await supabase
       .from('generated_sites')
