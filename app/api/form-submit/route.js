@@ -46,7 +46,7 @@ export async function POST(request) {
     // Verify the site exists and is paid
     const { data: site, error: siteError } = await supabase
       .from('generated_sites')
-      .select('id, business_name, email as owner_email, payment_status, subdomain')
+      .select('id, business_name, email, payment_status, subdomain')
       .eq('id', siteIdNum)
       .single()
 
@@ -85,11 +85,12 @@ export async function POST(request) {
 
     // Send email notification to site owner
     let emailSent = false
-    if (site.owner_email && resend) {
+    const ownerEmail = site.email
+    if (ownerEmail && resend) {
       try {
         await resend.emails.send({
           from: 'SpeakYour.Site <notifications@speakyour.site>',
-          to: site.owner_email,
+          to: ownerEmail,
           subject: `New ${formType} form submission for ${site.business_name || 'your site'}`,
           html: buildEmailHtml({
             businessName: site.business_name,
