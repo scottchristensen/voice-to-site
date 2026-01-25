@@ -8,6 +8,12 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 )
 
+// Admin client for creating users
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
+
 export async function POST(request) {
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
@@ -29,11 +35,52 @@ export async function POST(request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object
-        const { site_id, subdomain, email, phone } = session.metadata
+        const { site_id, subdomain, email, phone, account_token } = session.metadata
 
         if (!site_id || !subdomain) {
           console.error('Missing metadata in checkout session:', session.id)
           break
+        }
+
+        let userId = null
+
+        // Check if user already exists
+        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+        const existingUser = existingUsers?.users?.find(u => u.email === email)
+
+        if (existingUser) {
+          userId = existingUser.id
+        } else if (account_token) {
+          // Create user account from pending account
+          const { data: pendingAccount } = await supabase
+            .from('pending_accounts')
+            .select('*')
+            .eq('token', account_token)
+            .eq('email', email)
+            .gt('expires_at', new Date().toISOString())
+            .single()
+
+          if (pendingAccount) {
+            // Create the user with the stored password
+            const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+              email,
+              password: pendingAccount.password_hash,
+              email_confirm: true
+            })
+
+            if (createError) {
+              console.error('Failed to create user account:', createError)
+            } else {
+              userId = newUser.user.id
+              console.log(`Created user account for ${email}`)
+
+              // Clean up pending account
+              await supabase
+                .from('pending_accounts')
+                .delete()
+                .eq('token', account_token)
+            }
+          }
         }
 
         // Update site with claim information
@@ -47,14 +94,15 @@ export async function POST(request) {
             subscription_status: 'active',
             stripe_customer_id: session.customer,
             stripe_subscription_id: session.subscription,
-            claimed_at: new Date().toISOString()
+            claimed_at: new Date().toISOString(),
+            user_id: userId
           })
           .eq('id', site_id)
 
         if (error) {
           console.error('Failed to update site:', error)
         } else {
-          console.log(`Site ${site_id} claimed with subdomain ${subdomain}`)
+          console.log(`Site ${site_id} claimed with subdomain ${subdomain}${userId ? ` by user ${userId}` : ''}`)
         }
         break
       }
