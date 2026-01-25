@@ -36,6 +36,7 @@ export async function POST(request, { params }) {
       requirements: originalSite.requirements,
       html_code: originalSite.html_code,
       email: user.email,
+      user_id: user.id,
       phone: originalSite.phone,
       status: 'preview',
       payment_status: 'unpaid',
