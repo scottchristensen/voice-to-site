@@ -82,7 +82,7 @@ export default function SiteCard({ site }) {
           <ExternalLinkIcon />
           View
         </a>
-        <a href={`/dashboard/sites/${site.id}/edit`} style={styles.actionButton}>
+        <a href={`/edit/${site.id}`} style={styles.actionButton}>
           <EditIcon />
           Edit
         </a>

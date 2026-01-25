@@ -7,6 +7,10 @@ export default async function EditSitePage({ params }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  if (!user) {
+    redirect('/login')
+  }
+
   // Fetch the site data
   const { data: site, error } = await supabase
     .from('generated_sites')
