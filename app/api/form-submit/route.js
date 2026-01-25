@@ -27,6 +27,12 @@ export async function POST(request) {
       return Response.json({ error: 'Site ID is required' }, { status: 400, headers: corsHeaders })
     }
 
+    // Parse siteId as number (database uses BIGINT)
+    const siteIdNum = parseInt(siteId, 10)
+    if (isNaN(siteIdNum)) {
+      return Response.json({ error: 'Invalid site ID' }, { status: 400, headers: corsHeaders })
+    }
+
     if (!email && !phone && !message) {
       return Response.json({ error: 'Please provide at least one contact method or message' }, { status: 400, headers: corsHeaders })
     }
@@ -41,11 +47,16 @@ export async function POST(request) {
     const { data: site, error: siteError } = await supabase
       .from('generated_sites')
       .select('id, business_name, email as owner_email, payment_status, subdomain')
-      .eq('id', siteId)
+      .eq('id', siteIdNum)
       .single()
 
     if (siteError || !site) {
-      return Response.json({ error: 'Site not found' }, { status: 404, headers: corsHeaders })
+      console.error('Site lookup error:', siteError, 'siteId:', siteId)
+      return Response.json({
+        error: 'Site not found',
+        details: siteError?.message || 'No site with this ID',
+        siteId
+      }, { status: 404, headers: corsHeaders })
     }
 
     if (site.payment_status !== 'paid') {
@@ -56,7 +67,7 @@ export async function POST(request) {
     const { data: submission, error: insertError } = await supabase
       .from('form_submissions')
       .insert({
-        site_id: siteId,
+        site_id: siteIdNum,
         form_type: formType,
         name: name || null,
         email: email || null,
