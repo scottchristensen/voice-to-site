@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import ClaimModal from './ClaimModal'
+import EditPanel from './EditPanel'
+import EditSheet from './EditSheet'
 
 function getTimeRemaining(createdAt) {
   const created = new Date(createdAt)
@@ -16,9 +18,26 @@ function getTimeRemaining(createdAt) {
   return { hours, minutes, seconds, total: diff }
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  return isMobile
+}
+
 export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }) {
   const [showClaimModal, setShowClaimModal] = useState(false)
   const [timeLeft, setTimeLeft] = useState(() => getTimeRemaining(site.created_at))
+  const [isEditPanelOpen, setIsEditPanelOpen] = useState(false)
+  const [editsRemaining, setEditsRemaining] = useState(5 - (site.preview_edits_used || 0))
+  const [currentHtml, setCurrentHtml] = useState(site.html_code)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (isPaid || isExpired) return
@@ -29,6 +48,16 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
 
     return () => clearInterval(timer)
   }, [site.created_at, isPaid, isExpired])
+
+  const handleEditComplete = (newHtml, remaining) => {
+    setCurrentHtml(newHtml)
+    setEditsRemaining(remaining)
+  }
+
+  const handleLimitReached = () => {
+    setIsEditPanelOpen(false)
+    setShowClaimModal(true)
+  }
 
   // Expired site view
   if (isExpired) {
@@ -153,13 +182,58 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
       )}
 
       {/* Preview Container with rounded corners */}
-      <div style={styles.previewContainer}>
-        <iframe
-          srcDoc={site.html_code}
-          style={styles.iframe}
-          title="Website Preview"
-        />
+      <div style={styles.previewContainerWrapper}>
+        {/* Desktop Edit Panel */}
+        {!isMobile && !isPaid && (
+          <EditPanel
+            isOpen={isEditPanelOpen}
+            onClose={() => setIsEditPanelOpen(false)}
+            siteId={site.id}
+            editsRemaining={editsRemaining}
+            onEditComplete={handleEditComplete}
+            onLimitReached={handleLimitReached}
+          />
+        )}
+
+        <div style={{
+          ...styles.previewContainer,
+          marginLeft: !isMobile && isEditPanelOpen ? '350px' : '0',
+          transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}>
+          <iframe
+            srcDoc={currentHtml}
+            style={styles.iframe}
+            title="Website Preview"
+          />
+
+          {/* FAB - Floating Action Button for Edit */}
+          {!isPaid && !isEditPanelOpen && (
+            <button
+              onClick={() => setIsEditPanelOpen(true)}
+              style={styles.fab}
+              title="Edit your site"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              <span style={styles.fabLabel}>Edit</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Mobile Edit Sheet */}
+      {isMobile && !isPaid && (
+        <EditSheet
+          isOpen={isEditPanelOpen}
+          onClose={() => setIsEditPanelOpen(false)}
+          siteId={site.id}
+          editsRemaining={editsRemaining}
+          onEditComplete={handleEditComplete}
+          onLimitReached={handleLimitReached}
+        />
+      )}
 
       <ClaimModal
         site={site}
@@ -255,12 +329,43 @@ const styles = {
     color: '#22c55e',
     textDecoration: 'underline',
   },
+  // Preview container wrapper (for edit panel layout)
+  previewContainerWrapper: {
+    flex: 1,
+    position: 'relative',
+    display: 'flex',
+    overflow: 'hidden',
+  },
   // Preview container with drop shadow
   previewContainer: {
     flex: 1,
     borderRadius: '12px',
     overflow: 'hidden',
     boxShadow: '0 25px 80px rgba(0, 0, 0, 0.2), 0 15px 40px rgba(0, 0, 0, 0.15), 0 5px 15px rgba(0, 0, 0, 0.1)',
+    position: 'relative',
+  },
+  // Floating Action Button for Edit
+  fab: {
+    position: 'absolute',
+    bottom: '24px',
+    left: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '14px 20px',
+    background: '#2563eb',
+    color: 'white',
+    border: 'none',
+    borderRadius: '50px',
+    fontSize: '15px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    boxShadow: '0 4px 16px rgba(37, 99, 235, 0.4)',
+    zIndex: 50,
+    transition: 'transform 0.2s, box-shadow 0.2s',
+  },
+  fabLabel: {
+    marginRight: '4px',
   },
   // Preview iframe
   iframe: {

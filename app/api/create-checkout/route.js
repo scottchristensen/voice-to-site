@@ -8,9 +8,28 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 )
 
+// Tier pricing configuration
+const TIER_CONFIG = {
+  basic: {
+    name: 'Basic',
+    price: 900, // $9/mo
+    description: 'Hosting, subdomain, forms & email notifications'
+  },
+  pro: {
+    name: 'Pro',
+    price: 2900, // $29/mo
+    description: 'Everything in Basic + unlimited AI edits'
+  },
+  premium: {
+    name: 'Premium',
+    price: 5900, // $59/mo
+    description: 'Everything in Pro + 3 designer-reviewed edits/month'
+  }
+}
+
 export async function POST(request) {
   try {
-    const { siteId, subdomain, email, phone } = await request.json()
+    const { siteId, subdomain, email, phone, tier = 'pro' } = await request.json()
 
     // Validate required fields
     if (!siteId || !subdomain || !email) {
@@ -19,6 +38,16 @@ export async function POST(request) {
         { status: 400 }
       )
     }
+
+    // Validate tier
+    if (!TIER_CONFIG[tier]) {
+      return Response.json(
+        { error: 'Invalid tier. Must be basic, pro, or premium' },
+        { status: 400 }
+      )
+    }
+
+    const tierConfig = TIER_CONFIG[tier]
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -86,10 +115,10 @@ export async function POST(request) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `Website Hosting - ${site.business_name || 'Your Site'}`,
-              description: `Custom subdomain: ${normalizedSubdomain}.speakyour.site`
+              name: `${tierConfig.name} Plan - ${site.business_name || 'Your Site'}`,
+              description: `${tierConfig.description} • ${normalizedSubdomain}.speakyour.site`
             },
-            unit_amount: 2900, // $29.00
+            unit_amount: tierConfig.price,
             recurring: {
               interval: 'month'
             }
@@ -104,7 +133,8 @@ export async function POST(request) {
         site_id: siteId,
         subdomain: normalizedSubdomain,
         email,
-        phone: phone || ''
+        phone: phone || '',
+        plan_tier: tier
       }
     })
 

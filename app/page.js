@@ -62,29 +62,29 @@ const translations = {
       },
       step3: {
         title: 'Preview & Claim',
-        desc: 'See your new site instantly. Love it? Export the code, let us host it, or get premium design services to make it perfect.'
+        desc: 'See your new site instantly. Make quick edits with AI, then claim your site to go live with your own subdomain.'
       }
     },
     pricing: {
       title: 'Simple Pricing',
-      export: {
-        title: 'Export Code',
-        price: '$49',
-        period: 'one-time',
-        features: ['Download HTML/CSS/JS', 'Host anywhere you want', 'Full ownership']
+      basic: {
+        title: 'Basic',
+        price: '$9',
+        period: 'per month',
+        features: ['Hosting included', 'Custom subdomain', 'Contact forms', 'Email notifications']
       },
-      hosted: {
-        badge: 'Popular',
-        title: 'Hosted',
+      pro: {
+        badge: 'Most Popular',
+        title: 'Pro',
         price: '$29',
         period: 'per month',
-        features: ['We host it for you', 'Custom domain', 'SSL included', 'Basic analytics']
+        features: ['Everything in Basic', 'Unlimited AI edits', 'Priority support']
       },
       premium: {
-        title: 'Premium Design',
-        price: '$499+',
-        period: 'one-time',
-        features: ['Professional designer', 'Custom refinements', 'Brand alignment', 'Priority support']
+        title: 'Premium',
+        price: '$59',
+        period: 'per month',
+        features: ['Everything in Pro', '3 designer edits/month', 'Human-reviewed changes']
       }
     },
     footer: 'Built with Speak to Site'
@@ -148,29 +148,29 @@ const translations = {
       },
       step3: {
         title: 'Vista Previa y Reclama',
-        desc: 'Mira tu nuevo sitio al instante. ¿Te encanta? Exporta el código, déjanos alojarlo, o obtén servicios de diseño premium para hacerlo perfecto.'
+        desc: 'Mira tu nuevo sitio al instante. Haz ediciones rápidas con IA, luego reclama tu sitio para publicarlo con tu propio subdominio.'
       }
     },
     pricing: {
       title: 'Precios Simples',
-      export: {
-        title: 'Exportar Código',
-        price: '$49',
-        period: 'único pago',
-        features: ['Descargar HTML/CSS/JS', 'Alojar donde quieras', 'Propiedad completa']
+      basic: {
+        title: 'Básico',
+        price: '$9',
+        period: 'por mes',
+        features: ['Alojamiento incluido', 'Subdominio personalizado', 'Formularios de contacto', 'Notificaciones por email']
       },
-      hosted: {
-        badge: 'Popular',
-        title: 'Alojado',
+      pro: {
+        badge: 'Más Popular',
+        title: 'Pro',
         price: '$29',
         period: 'por mes',
-        features: ['Lo alojamos por ti', 'Dominio personalizado', 'SSL incluido', 'Análisis básicos']
+        features: ['Todo lo de Básico', 'Ediciones AI ilimitadas', 'Soporte prioritario']
       },
       premium: {
-        title: 'Diseño Premium',
-        price: '$499+',
-        period: 'único pago',
-        features: ['Diseñador profesional', 'Refinamientos personalizados', 'Alineación de marca', 'Soporte prioritario']
+        title: 'Premium',
+        price: '$59',
+        period: 'por mes',
+        features: ['Todo lo de Pro', '3 ediciones de diseñador/mes', 'Cambios revisados por humanos']
       }
     },
     footer: 'Hecho con Habla a Sitio'
@@ -544,20 +544,20 @@ export default function Home() {
         <h2 style={{...styles.sectionTitle, ...(isDarkMode && styles.sectionTitleDark)}}>{t.pricing.title}</h2>
         <div style={styles.pricingCards}>
           <div style={{...styles.pricingCard, ...(isDarkMode && styles.pricingCardDark)}}>
-            <h3 style={styles.pricingTitle}>{t.pricing.export.title}</h3>
-            <div style={styles.pricingPrice}>{t.pricing.export.price}</div>
-            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>{t.pricing.export.period}</p>
+            <h3 style={styles.pricingTitle}>{t.pricing.basic.title}</h3>
+            <div style={styles.pricingPrice}>{t.pricing.basic.price}</div>
+            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>{t.pricing.basic.period}</p>
             <ul style={styles.pricingFeatures}>
-              {t.pricing.export.features.map((feature, i) => <li key={i}>{feature}</li>)}
+              {t.pricing.basic.features.map((feature, i) => <li key={i}>{feature}</li>)}
             </ul>
           </div>
           <div style={{ ...styles.pricingCard, ...styles.pricingCardFeatured, ...(isDarkMode && styles.pricingCardDark) }}>
-            <div style={styles.pricingBadge}>{t.pricing.hosted.badge}</div>
-            <h3 style={styles.pricingTitle}>{t.pricing.hosted.title}</h3>
-            <div style={styles.pricingPrice}>{t.pricing.hosted.price}</div>
-            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>{t.pricing.hosted.period}</p>
+            <div style={styles.pricingBadge}>{t.pricing.pro.badge}</div>
+            <h3 style={styles.pricingTitle}>{t.pricing.pro.title}</h3>
+            <div style={styles.pricingPrice}>{t.pricing.pro.price}</div>
+            <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>{t.pricing.pro.period}</p>
             <ul style={styles.pricingFeatures}>
-              {t.pricing.hosted.features.map((feature, i) => <li key={i}>{feature}</li>)}
+              {t.pricing.pro.features.map((feature, i) => <li key={i}>{feature}</li>)}
             </ul>
           </div>
           <div style={{...styles.pricingCard, ...(isDarkMode && styles.pricingCardDark)}}>

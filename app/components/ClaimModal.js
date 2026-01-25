@@ -2,7 +2,48 @@
 
 import { useState, useEffect } from 'react'
 
+const TIERS = [
+  {
+    id: 'basic',
+    name: 'Basic',
+    price: '$9',
+    period: '/mo',
+    features: [
+      'Hosting included',
+      'Custom subdomain',
+      'Contact forms',
+      'Email notifications'
+    ],
+    popular: false
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: '$29',
+    period: '/mo',
+    features: [
+      'Everything in Basic',
+      'Unlimited AI edits',
+      'Priority support'
+    ],
+    popular: true
+  },
+  {
+    id: 'premium',
+    name: 'Premium',
+    price: '$59',
+    period: '/mo',
+    features: [
+      'Everything in Pro',
+      '3 designer edits/month',
+      'Human-reviewed changes'
+    ],
+    popular: false
+  }
+]
+
 export default function ClaimModal({ site, isOpen, onClose }) {
+  const [selectedTier, setSelectedTier] = useState('pro')
   const [subdomain, setSubdomain] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -69,7 +110,8 @@ export default function ClaimModal({ site, isOpen, onClose }) {
           siteId: site.id,
           subdomain,
           email,
-          phone
+          phone,
+          tier: selectedTier
         })
       })
 
@@ -92,6 +134,8 @@ export default function ClaimModal({ site, isOpen, onClose }) {
     setSubdomain(value)
   }
 
+  const selectedTierData = TIERS.find(t => t.id === selectedTier)
+
   if (!isOpen) return null
 
   return (
@@ -99,10 +143,40 @@ export default function ClaimModal({ site, isOpen, onClose }) {
       <div style={styles.modal} onClick={e => e.stopPropagation()}>
         <button onClick={onClose} style={styles.closeX}>&times;</button>
 
-        <h2 style={styles.title}>Claim Your Site</h2>
+        <h2 style={styles.title}>Choose Your Plan</h2>
         <p style={styles.subtitle}>
-          Get your own URL: <strong>{subdomain || 'yoursite'}.speakyour.site</strong>
+          Your site: <strong>{subdomain || 'yoursite'}.speakyour.site</strong>
         </p>
+
+        {/* Tier Selector */}
+        <div style={styles.tierGrid}>
+          {TIERS.map((tier) => (
+            <button
+              key={tier.id}
+              onClick={() => setSelectedTier(tier.id)}
+              style={{
+                ...styles.tierCard,
+                ...(selectedTier === tier.id ? styles.tierCardSelected : {}),
+                ...(tier.popular ? styles.tierCardPopular : {})
+              }}
+            >
+              {tier.popular && <span style={styles.popularBadge}>Most Popular</span>}
+              <div style={styles.tierName}>{tier.name}</div>
+              <div style={styles.tierPrice}>
+                <span style={styles.priceAmount}>{tier.price}</span>
+                <span style={styles.pricePeriod}>{tier.period}</span>
+              </div>
+              <ul style={styles.tierFeatures}>
+                {tier.features.map((feature, i) => (
+                  <li key={i} style={styles.tierFeature}>
+                    <span style={styles.checkIcon}>&#10003;</span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </button>
+          ))}
+        </div>
 
         <form onSubmit={handleSubmit}>
           {/* Subdomain Input */}
@@ -161,17 +235,6 @@ export default function ClaimModal({ site, isOpen, onClose }) {
 
           {error && <p style={styles.error}>{error}</p>}
 
-          {/* What you get */}
-          <div style={styles.benefits}>
-            <p style={styles.benefitsTitle}>What you get:</p>
-            <ul style={styles.benefitsList}>
-              <li>&#10003; Custom subdomain: {subdomain || 'yoursite'}.speakyour.site</li>
-              <li>&#10003; SSL certificate included</li>
-              <li>&#10003; Fast, reliable hosting</li>
-              <li>&#10003; Cancel anytime</li>
-            </ul>
-          </div>
-
           {/* Submit Button */}
           <button
             type="submit"
@@ -182,7 +245,10 @@ export default function ClaimModal({ site, isOpen, onClose }) {
               cursor: (!isAvailable || !email || isSubmitting) ? 'not-allowed' : 'pointer'
             }}
           >
-            {isSubmitting ? 'Redirecting to Checkout...' : 'Continue to Payment - $29/mo'}
+            {isSubmitting
+              ? 'Redirecting to Checkout...'
+              : `Continue to Payment - ${selectedTierData?.price}${selectedTierData?.period}`
+            }
           </button>
         </form>
 
@@ -212,8 +278,8 @@ const styles = {
     position: 'relative',
     background: 'white',
     borderRadius: '16px',
-    padding: '40px',
-    maxWidth: '480px',
+    padding: '32px',
+    maxWidth: '680px',
     width: '100%',
     maxHeight: '90vh',
     overflowY: 'auto',
@@ -231,30 +297,108 @@ const styles = {
     lineHeight: 1
   },
   title: {
-    fontSize: '28px',
+    fontSize: '24px',
     fontWeight: '700',
-    marginBottom: '8px',
-    color: '#1a1a2e'
+    marginBottom: '4px',
+    color: '#1a1a2e',
+    textAlign: 'center'
   },
   subtitle: {
     color: '#666',
+    marginBottom: '20px',
+    textAlign: 'center',
+    fontSize: '14px'
+  },
+  tierGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '12px',
     marginBottom: '24px'
   },
+  tierCard: {
+    position: 'relative',
+    padding: '16px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '12px',
+    background: 'white',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'all 0.2s',
+  },
+  tierCardSelected: {
+    borderColor: '#2563eb',
+    background: '#eff6ff',
+    boxShadow: '0 0 0 1px #2563eb',
+  },
+  tierCardPopular: {
+    borderColor: '#2563eb',
+  },
+  popularBadge: {
+    position: 'absolute',
+    top: '-10px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: '#2563eb',
+    color: 'white',
+    padding: '4px 10px',
+    borderRadius: '12px',
+    fontSize: '10px',
+    fontWeight: '600',
+    whiteSpace: 'nowrap',
+  },
+  tierName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: '4px',
+  },
+  tierPrice: {
+    marginBottom: '12px',
+  },
+  priceAmount: {
+    fontSize: '24px',
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  pricePeriod: {
+    fontSize: '14px',
+    color: '#6b7280',
+  },
+  tierFeatures: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0,
+    fontSize: '12px',
+    color: '#4b5563',
+  },
+  tierFeature: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '6px',
+    marginBottom: '4px',
+    lineHeight: '1.4',
+  },
+  checkIcon: {
+    color: '#22c55e',
+    fontWeight: '600',
+    flexShrink: 0,
+  },
   field: {
-    marginBottom: '20px'
+    marginBottom: '16px'
   },
   label: {
     display: 'block',
     fontWeight: '600',
-    marginBottom: '8px',
-    color: '#333'
+    marginBottom: '6px',
+    color: '#333',
+    fontSize: '14px'
   },
   input: {
     width: '100%',
-    padding: '12px 16px',
+    padding: '12px 14px',
     border: '2px solid #e0e0e0',
     borderRadius: '8px',
-    fontSize: '16px',
+    fontSize: '15px',
     outline: 'none',
     boxSizing: 'border-box',
     transition: 'border-color 0.2s'
@@ -269,7 +413,7 @@ const styles = {
     flex: 1
   },
   suffix: {
-    padding: '12px 16px',
+    padding: '12px 14px',
     background: '#f5f5f5',
     border: '2px solid #e0e0e0',
     borderLeft: 'none',
@@ -278,24 +422,24 @@ const styles = {
     whiteSpace: 'nowrap',
     display: 'flex',
     alignItems: 'center',
-    fontSize: '14px'
+    fontSize: '13px'
   },
   availabilityRow: {
     marginTop: '6px',
-    minHeight: '20px'
+    minHeight: '18px'
   },
   checking: {
     color: '#888',
-    fontSize: '14px'
+    fontSize: '13px'
   },
   available: {
     color: '#22c55e',
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: '500'
   },
   unavailable: {
     color: '#ef4444',
-    fontSize: '14px'
+    fontSize: '13px'
   },
   error: {
     color: '#ef4444',
@@ -305,33 +449,14 @@ const styles = {
     borderRadius: '8px',
     fontSize: '14px'
   },
-  benefits: {
-    background: '#f8fafc',
-    borderRadius: '8px',
-    padding: '16px',
-    marginBottom: '24px'
-  },
-  benefitsTitle: {
-    fontWeight: '600',
-    marginBottom: '8px',
-    color: '#333'
-  },
-  benefitsList: {
-    margin: 0,
-    paddingLeft: '0',
-    listStyle: 'none',
-    color: '#555',
-    fontSize: '14px',
-    lineHeight: '1.8'
-  },
   submitButton: {
     width: '100%',
     padding: '16px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
-    fontSize: '18px',
+    fontSize: '16px',
     fontWeight: '600',
     cursor: 'pointer'
   },

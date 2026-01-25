@@ -29,7 +29,7 @@ export async function POST(request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object
-        const { site_id, subdomain, email, phone } = session.metadata
+        const { site_id, subdomain, email, phone, plan_tier } = session.metadata
 
         if (!site_id || !subdomain) {
           console.error('Missing metadata in checkout session:', session.id)
@@ -47,6 +47,7 @@ export async function POST(request) {
             subscription_status: 'active',
             stripe_customer_id: session.customer,
             stripe_subscription_id: session.subscription,
+            plan_tier: plan_tier || 'pro', // Default to pro for legacy checkouts
             claimed_at: new Date().toISOString()
           })
           .eq('id', site_id)
@@ -54,7 +55,7 @@ export async function POST(request) {
         if (error) {
           console.error('Failed to update site:', error)
         } else {
-          console.log(`Site ${site_id} claimed with subdomain ${subdomain}`)
+          console.log(`Site ${site_id} claimed with subdomain ${subdomain}, tier: ${plan_tier || 'pro'}`)
         }
         break
       }

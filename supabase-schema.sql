@@ -164,3 +164,63 @@ CREATE POLICY "Allow public form submissions" ON form_submissions
 CREATE POLICY "Allow reading submissions" ON form_submissions
   FOR SELECT
   USING (true);
+
+-- =============================================
+-- MIGRATION: Upsell Features (Pre-claim editing, 3-tier plans)
+-- Run this if the table already exists
+-- =============================================
+
+-- Pre-claim edit tracking
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  preview_edits_used INT DEFAULT 0;
+
+-- Plan tier tracking
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  plan_tier TEXT DEFAULT 'basic'; -- 'basic', 'pro', 'premium'
+
+-- Designer edit tracking (Premium tier)
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  designer_edits_used_this_month INT DEFAULT 0;
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  designer_edits_reset_at TIMESTAMPTZ;
+
+-- Site version history (for rollback on post-claim edits)
+CREATE TABLE IF NOT EXISTS site_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_id BIGINT REFERENCES generated_sites(id) ON DELETE CASCADE,
+  version_number INT,
+  html_code TEXT,
+  edit_description TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_site_versions_site_id
+ON site_versions(site_id);
+
+-- Designer edit requests (Premium tier)
+CREATE TABLE IF NOT EXISTS designer_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_id BIGINT REFERENCES generated_sites(id) ON DELETE CASCADE,
+  request_content TEXT NOT NULL,
+  attachments JSONB, -- Array of {filename, url, type}
+  status TEXT DEFAULT 'pending', -- 'pending', 'in_progress', 'completed'
+  created_at TIMESTAMPTZ DEFAULT now(),
+  completed_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_designer_requests_site_id
+ON designer_requests(site_id);
+
+-- Enable RLS on new tables
+ALTER TABLE site_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE designer_requests ENABLE ROW LEVEL SECURITY;
+
+-- Policies for site_versions
+CREATE POLICY "Allow service role access to site_versions" ON site_versions
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- Policies for designer_requests
+CREATE POLICY "Allow public inserts to designer_requests" ON designer_requests
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow reading designer_requests" ON designer_requests
+  FOR SELECT USING (true);
