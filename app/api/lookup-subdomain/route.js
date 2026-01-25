@@ -1,11 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
-
 export async function GET(request) {
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY
+  )
   // Only allow requests from middleware
   const isMiddlewareRequest = request.headers.get('x-middleware-request') === 'true'
   if (!isMiddlewareRequest) {
