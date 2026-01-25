@@ -14,10 +14,20 @@ export default function EditSheet({
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [sheetHeight, setSheetHeight] = useState('70vh')
+  const [dragOffset, setDragOffset] = useState(0)
+  const [loadingStatusIndex, setLoadingStatusIndex] = useState(0)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const sheetRef = useRef(null)
   const dragStartY = useRef(null)
+
+  const loadingStatuses = [
+    'Analyzing your request...',
+    'Updating your site...',
+    'Applying changes...',
+    'Almost there...',
+    'Polishing details...',
+  ]
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -31,6 +41,18 @@ export default function EditSheet({
     }
   }, [isOpen])
 
+  // Loading status carousel
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingStatusIndex(0)
+      return
+    }
+    const interval = setInterval(() => {
+      setLoadingStatusIndex(prev => (prev + 1) % loadingStatuses.length)
+    }, 2500)
+    return () => clearInterval(interval)
+  }, [isLoading])
+
   const handleDragStart = (e) => {
     dragStartY.current = e.touches ? e.touches[0].clientY : e.clientY
   }
@@ -38,16 +60,15 @@ export default function EditSheet({
   const handleDrag = (e) => {
     if (dragStartY.current === null) return
     const currentY = e.touches ? e.touches[0].clientY : e.clientY
-    const delta = currentY - dragStartY.current
-
-    // If dragging down significantly, minimize
-    if (delta > 100) {
-      onClose()
-      dragStartY.current = null
-    }
+    const delta = Math.max(0, currentY - dragStartY.current)
+    setDragOffset(delta)
   }
 
   const handleDragEnd = () => {
+    if (dragOffset > 100) {
+      onClose()
+    }
+    setDragOffset(0)
     dragStartY.current = null
   }
 
@@ -127,7 +148,7 @@ export default function EditSheet({
         ref={sheetRef}
         style={{
           ...styles.sheet,
-          transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
+          transform: isOpen ? `translateY(${dragOffset}px)` : 'translateY(100%)',
           height: sheetHeight,
         }}
       >
@@ -147,13 +168,12 @@ export default function EditSheet({
         {/* Header */}
         <div style={styles.header}>
           <div style={styles.headerLeft}>
-            <span style={styles.editsBadge}>
+            <span style={styles.editsSubtitle}>
               {editsRemaining} edit{editsRemaining !== 1 ? 's' : ''} remaining
             </span>
           </div>
           <button onClick={onClose} style={styles.minimizeButton}>
-            Minimize
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '4px' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 14l-7 7-7-7" />
             </svg>
           </button>
@@ -204,9 +224,7 @@ export default function EditSheet({
           ))}
           {isLoading && (
             <div style={{ ...styles.message, ...styles.assistantMessage }}>
-              <span className="loading-dots">
-                <span>.</span><span>.</span><span>.</span>
-              </span>
+              {loadingStatuses[loadingStatusIndex]}
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -237,24 +255,8 @@ export default function EditSheet({
           </button>
         </form>
 
-        {/* Bottom CTA */}
-        <div style={styles.ctaSection}>
-          <button onClick={onLimitReached} style={styles.claimButton}>
-            Claim My Site
-          </button>
-        </div>
       </div>
 
-      <style>{`
-        @keyframes blink {
-          0%, 20% { opacity: 0; }
-          50% { opacity: 1; }
-          100% { opacity: 0; }
-        }
-        .loading-dots span:nth-child(1) { animation: blink 1.4s infinite 0s; }
-        .loading-dots span:nth-child(2) { animation: blink 1.4s infinite 0.2s; }
-        .loading-dots span:nth-child(3) { animation: blink 1.4s infinite 0.4s; }
-      `}</style>
     </>
   )
 }
@@ -310,14 +312,10 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
   },
-  editsBadge: {
-    display: 'inline-block',
+  editsSubtitle: {
     fontSize: '13px',
-    fontWeight: '600',
-    color: '#6366f1',
-    background: '#eef2ff',
-    padding: '6px 12px',
-    borderRadius: '16px',
+    fontWeight: '500',
+    color: '#6b7280',
   },
   minimizeButton: {
     display: 'flex',
@@ -423,22 +421,5 @@ const styles = {
     justifyContent: 'center',
     flexShrink: 0,
     transition: 'opacity 0.2s',
-  },
-  ctaSection: {
-    padding: '12px 16px',
-    paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
-    borderTop: '1px solid #e5e7eb',
-  },
-  claimButton: {
-    width: '100%',
-    padding: '14px',
-    background: '#2563eb',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '15px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
   },
 }

@@ -2,6 +2,19 @@
 
 import { useState, useEffect } from 'react'
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  return isMobile
+}
+
 const TIERS = [
   {
     id: 'basic',
@@ -54,7 +67,9 @@ export default function ClaimModal({ site, isOpen, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [availabilityError, setAvailabilityError] = useState('')
+  const [emailError, setEmailError] = useState('')
   const [usePassword, setUsePassword] = useState(false)
+  const isMobile = useIsMobile()
 
   // Auto-suggest subdomain from business name
   useEffect(() => {
@@ -99,8 +114,16 @@ export default function ClaimModal({ site, isOpen, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setEmailError('')
+    setError('')
 
-    if (!isAvailable || !email) return
+    // Validate email
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError('Please enter a valid email address')
+      return
+    }
+
+    if (!isAvailable) return
 
     // Validate password if using password auth
     if (usePassword) {
@@ -115,7 +138,6 @@ export default function ClaimModal({ site, isOpen, onClose }) {
     }
 
     setIsSubmitting(true)
-    setError('')
 
     try {
       const res = await fetch('/api/create-checkout', {
@@ -155,27 +177,54 @@ export default function ClaimModal({ site, isOpen, onClose }) {
   if (!isOpen) return null
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modal} onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} style={styles.closeX}>&times;</button>
+    <div style={{
+      ...styles.overlay,
+      ...(isMobile ? { padding: 0 } : {})
+    }} onClick={onClose}>
+      <div style={{
+        ...styles.modal,
+        ...(isMobile ? {
+          maxWidth: '100%',
+          height: '100vh',
+          maxHeight: '100vh',
+          borderRadius: 0,
+          padding: 0,
+        } : {})
+      }} onClick={e => e.stopPropagation()}>
+        {/* Sticky Header */}
+        <div style={{
+          ...(isMobile ? {
+            position: 'sticky',
+            top: 0,
+            background: 'white',
+            padding: '16px',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            zIndex: 10,
+          } : { position: 'relative' })
+        }}>
+          <h2 style={{...styles.title, ...(isMobile ? { margin: 0, textAlign: 'left' } : {})}}>Choose Your Plan</h2>
+          <button onClick={onClose} style={styles.closeX}>&times;</button>
+        </div>
 
-        <h2 style={styles.title}>Choose Your Plan</h2>
-        <p style={styles.subtitle}>
-          Your site: <strong>{subdomain || 'yoursite'}.speakyour.site</strong>
-        </p>
+        <div style={isMobile ? { padding: '16px', paddingBottom: '100px', overflowY: 'auto' } : {}}>
+          <p style={styles.subtitle}>
+            Your site: <strong>{subdomain || 'yoursite'}.speakyour.site</strong>
+          </p>
 
-        {/* Tier Selector */}
-        <div style={styles.tierGrid}>
-          {TIERS.map((tier) => (
-            <button
-              key={tier.id}
-              onClick={() => setSelectedTier(tier.id)}
-              style={{
-                ...styles.tierCard,
-                ...(selectedTier === tier.id ? styles.tierCardSelected : {}),
-                ...(tier.popular ? styles.tierCardPopular : {})
-              }}
-            >
+          {/* Tier Selector */}
+          <div style={styles.tierGrid}>
+            {TIERS.map((tier) => (
+              <button
+                key={tier.id}
+                onClick={() => setSelectedTier(tier.id)}
+                style={{
+                  ...styles.tierCard,
+                  ...(selectedTier === tier.id ? styles.tierCardSelected : {})
+                }}
+              >
               {tier.popular && <span style={styles.popularBadge}>Most Popular</span>}
               <div style={styles.tierName}>{tier.name}</div>
               <div style={styles.tierPrice}>
@@ -194,20 +243,19 @@ export default function ClaimModal({ site, isOpen, onClose }) {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form id="claim-form" onSubmit={handleSubmit}>
           {/* Subdomain Input */}
           <div style={styles.field}>
             <label style={styles.label}>Your Subdomain</label>
-            <div style={styles.subdomainWrapper}>
+            <div style={{
+              ...styles.subdomainFieldWrapper,
+              borderColor: isAvailable === true ? '#22c55e' : isAvailable === false ? '#ef4444' : '#e0e0e0'
+            }}>
               <input
                 type="text"
                 value={subdomain}
                 onChange={handleSubdomainChange}
-                style={{
-                  ...styles.input,
-                  ...styles.subdomainInput,
-                  borderColor: isAvailable === true ? '#22c55e' : isAvailable === false ? '#ef4444' : '#e0e0e0'
-                }}
+                style={styles.subdomainInput}
                 placeholder="mybusiness"
                 maxLength={63}
               />
@@ -230,11 +278,17 @@ export default function ClaimModal({ site, isOpen, onClose }) {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                setEmailError('')
+              }}
+              style={{
+                ...styles.input,
+                ...(emailError ? { borderColor: '#ef4444' } : {})
+              }}
               placeholder="you@example.com"
-              required
             />
+            {emailError && <p style={styles.fieldError}>{emailError}</p>}
           </div>
 
           {/* Account Creation Option */}
@@ -307,26 +361,40 @@ export default function ClaimModal({ site, isOpen, onClose }) {
 
           {error && <p style={styles.error}>{error}</p>}
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={!isAvailable || !email || isSubmitting}
-            style={{
-              ...styles.submitButton,
-              opacity: (!isAvailable || !email || isSubmitting) ? 0.6 : 1,
-              cursor: (!isAvailable || !email || isSubmitting) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {isSubmitting
-              ? 'Redirecting to Checkout...'
-              : `Continue to Payment - ${selectedTierData?.price}${selectedTierData?.period}`
-            }
-          </button>
+          {/* Submit Button (non-mobile) */}
+          {!isMobile && (
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              style={{
+                ...styles.submitButton,
+                opacity: isSubmitting ? 0.6 : 1,
+                cursor: isSubmitting ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isSubmitting ? 'Redirecting to Checkout...' : 'Continue to Payment'}
+            </button>
+          )}
         </form>
+        </div>
 
-        <button onClick={onClose} style={styles.cancelButton}>
-          Maybe Later
-        </button>
+        {/* Sticky CTA Footer (mobile) */}
+        {isMobile && (
+          <div style={styles.stickyFooter}>
+            <button
+              type="submit"
+              form="claim-form"
+              disabled={isSubmitting}
+              style={{
+                ...styles.submitButton,
+                opacity: isSubmitting ? 0.6 : 1,
+                cursor: isSubmitting ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isSubmitting ? 'Redirecting to Checkout...' : 'Continue to Payment'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -382,10 +450,13 @@ const styles = {
     fontSize: '14px'
   },
   tierGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
+    display: 'flex',
+    overflowX: 'auto',
     gap: '12px',
-    marginBottom: '24px'
+    marginBottom: '24px',
+    paddingBottom: '8px',
+    scrollSnapType: 'x mandatory',
+    WebkitOverflowScrolling: 'touch',
   },
   tierCard: {
     position: 'relative',
@@ -396,14 +467,14 @@ const styles = {
     cursor: 'pointer',
     textAlign: 'left',
     transition: 'all 0.2s',
+    minWidth: '200px',
+    flexShrink: 0,
+    scrollSnapAlign: 'start',
   },
   tierCardSelected: {
     borderColor: '#2563eb',
     background: '#eff6ff',
     boxShadow: '0 0 0 1px #2563eb',
-  },
-  tierCardPopular: {
-    borderColor: '#2563eb',
   },
   popularBadge: {
     position: 'absolute',
@@ -475,21 +546,26 @@ const styles = {
     boxSizing: 'border-box',
     transition: 'border-color 0.2s'
   },
-  subdomainWrapper: {
+  subdomainFieldWrapper: {
     display: 'flex',
-    alignItems: 'stretch'
+    borderRadius: '8px',
+    overflow: 'hidden',
+    border: '2px solid #e0e0e0',
+    transition: 'border-color 0.2s',
   },
   subdomainInput: {
-    borderRadius: '8px 0 0 8px',
-    borderRight: 'none',
-    flex: 1
+    flex: 1,
+    padding: '12px 14px',
+    border: 'none',
+    borderRadius: 0,
+    fontSize: '15px',
+    outline: 'none',
+    boxSizing: 'border-box',
   },
   suffix: {
     padding: '12px 14px',
     background: '#f5f5f5',
-    border: '2px solid #e0e0e0',
-    borderLeft: 'none',
-    borderRadius: '0 8px 8px 0',
+    borderLeft: '1px solid #e0e0e0',
     color: '#666',
     whiteSpace: 'nowrap',
     display: 'flex',
@@ -532,15 +608,19 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer'
   },
-  cancelButton: {
-    width: '100%',
-    padding: '12px',
-    background: 'transparent',
-    border: 'none',
-    color: '#888',
-    marginTop: '12px',
-    cursor: 'pointer',
-    fontSize: '14px'
+  fieldError: {
+    color: '#ef4444',
+    fontSize: '13px',
+    marginTop: '4px',
+    margin: 0,
+  },
+  stickyFooter: {
+    position: 'sticky',
+    bottom: 0,
+    background: 'white',
+    padding: '16px',
+    borderTop: '1px solid #e5e7eb',
+    paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
   },
   accountOption: {
     marginBottom: '20px',

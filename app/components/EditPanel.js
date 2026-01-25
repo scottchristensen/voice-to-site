@@ -13,8 +13,17 @@ export default function EditPanel({
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingStatusIndex, setLoadingStatusIndex] = useState(0)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+
+  const loadingStatuses = [
+    'Analyzing your request...',
+    'Updating your site...',
+    'Applying changes...',
+    'Almost there...',
+    'Polishing details...',
+  ]
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -27,6 +36,18 @@ export default function EditPanel({
       setTimeout(() => inputRef.current?.focus(), 300)
     }
   }, [isOpen])
+
+  // Loading status carousel
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingStatusIndex(0)
+      return
+    }
+    const interval = setInterval(() => {
+      setLoadingStatusIndex(prev => (prev + 1) % loadingStatuses.length)
+    }, 2500)
+    return () => clearInterval(interval)
+  }, [isLoading])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -140,9 +161,7 @@ export default function EditPanel({
         ))}
         {isLoading && (
           <div style={{ ...styles.message, ...styles.assistantMessage }}>
-            <span style={styles.loadingDots}>
-              <span>.</span><span>.</span><span>.</span>
-            </span>
+            {loadingStatuses[loadingStatusIndex]}
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -173,13 +192,6 @@ export default function EditPanel({
         </button>
       </form>
 
-      {/* CTA */}
-      <div style={styles.ctaSection}>
-        <button onClick={onLimitReached} style={styles.claimButton}>
-          Claim My Site
-        </button>
-      </div>
-
       <style>{`
         @keyframes blink {
           0%, 20% { opacity: 0; }
@@ -208,6 +220,8 @@ const styles = {
     zIndex: 100,
     transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     fontFamily: 'system-ui, -apple-system, sans-serif',
+    borderTopRightRadius: '12px',
+    borderBottomRightRadius: '12px',
   },
   header: {
     display: 'flex',
@@ -311,12 +325,6 @@ const styles = {
     marginRight: '6px',
     fontWeight: '600',
   },
-  loadingDots: {
-    display: 'inline-flex',
-    gap: '2px',
-    fontSize: '20px',
-    fontWeight: 'bold',
-  },
   inputForm: {
     display: 'flex',
     gap: '8px',
@@ -343,21 +351,5 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     transition: 'opacity 0.2s',
-  },
-  ctaSection: {
-    padding: '16px',
-    borderTop: '1px solid #e5e7eb',
-  },
-  claimButton: {
-    width: '100%',
-    padding: '14px',
-    background: '#2563eb',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '15px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
   },
 }

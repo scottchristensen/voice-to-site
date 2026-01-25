@@ -140,15 +140,11 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
           `}</style>
           <div className="header-row" style={styles.header}>
             <div className="header-title" style={styles.headerTextWrapper}>
-              <span style={styles.headerText}>View your website below</span>
-              <span style={styles.headerSubtext}>Like what you see? Claim your site today.</span>
+              <span style={styles.headerText}>Your site preview</span>
             </div>
             <span className="urgency-badge" style={styles.urgencyBadge}>
               {timeLeft.total > 0 ? (
-                <>
-                  <span style={styles.timerTime}>{timeLeft.hours} hr {timeLeft.minutes} mins</span>
-                  <span style={styles.timerLabel}>left to claim</span>
-                </>
+                <span style={styles.timerTime}>{timeLeft.hours}h {timeLeft.minutes}m left to claim</span>
               ) : (
                 'Expiring soon!'
               )}
@@ -248,6 +244,7 @@ const styles = {
   // Outer wrapper with padding
   outerWrapper: {
     height: '100vh',
+    overflow: 'hidden',
     background: '#f5f5f7',
     padding: '16px 32px 32px 32px',
     boxSizing: 'border-box',
@@ -274,11 +271,6 @@ const styles = {
     fontSize: '24px',
     fontWeight: '700',
   },
-  headerSubtext: {
-    color: '#6b7280',
-    fontSize: '15px',
-    fontWeight: '400',
-  },
   urgencyBadge: {
     display: 'inline-flex',
     flexDirection: 'column',
@@ -295,10 +287,6 @@ const styles = {
     fontSize: '15px',
     fontWeight: '700',
     fontVariantNumeric: 'tabular-nums',
-  },
-  timerLabel: {
-    fontSize: '11px',
-    fontWeight: '500',
   },
   claimCta: {
     background: '#2563eb',
