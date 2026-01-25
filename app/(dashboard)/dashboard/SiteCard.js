@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import SiteSettingsModal from './SiteSettingsModal'
 
 export default function SiteCard({ site }) {
-  const [isDeleting, setIsDeleting] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   const handleDuplicate = async () => {
     setIsDuplicating(true)
@@ -16,36 +16,14 @@ export default function SiteCard({ site }) {
       const data = await response.json()
 
       if (data.success) {
-        // Redirect to the preview of the duplicated site
         window.location.href = data.previewUrl
       } else {
         alert('Failed to duplicate site: ' + data.error)
       }
-    } catch (error) {
+    } catch {
       alert('Failed to duplicate site')
     }
     setIsDuplicating(false)
-  }
-
-  const handleDelete = async () => {
-    setIsDeleting(true)
-    try {
-      const response = await fetch(`/api/sites/${site.id}/delete`, {
-        method: 'DELETE',
-      })
-      const data = await response.json()
-
-      if (data.success) {
-        // Refresh the page to show updated list
-        window.location.reload()
-      } else {
-        alert('Failed to delete site: ' + data.error)
-      }
-    } catch (error) {
-      alert('Failed to delete site')
-    }
-    setIsDeleting(false)
-    setShowDeleteConfirm(false)
   }
 
   return (
@@ -95,39 +73,20 @@ export default function SiteCard({ site }) {
           {isDuplicating ? '...' : 'Duplicate'}
         </button>
         <button
-          onClick={() => setShowDeleteConfirm(true)}
-          style={styles.deleteButton}
+          onClick={() => setShowSettings(true)}
+          style={styles.settingsButton}
+          title="Site Settings"
         >
-          <TrashIcon />
+          <SettingsIcon />
         </button>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h3 style={styles.modalTitle}>Delete Site?</h3>
-            <p style={styles.modalText}>
-              This will cancel your subscription and take <strong>{site.subdomain}.speakyour.site</strong> offline. This action cannot be undone.
-            </p>
-            <div style={styles.modalActions}>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                style={styles.cancelButton}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                style={styles.confirmDeleteButton}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete Site'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Site Settings Modal */}
+      <SiteSettingsModal
+        site={site}
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
     </div>
   )
 }
@@ -160,11 +119,11 @@ function CopyIcon() {
   )
 }
 
-function TrashIcon() {
+function SettingsIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="3 6 5 6 21 6"></polyline>
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
     </svg>
   )
 }
@@ -266,7 +225,7 @@ const styles = {
     fontWeight: '500',
     cursor: 'pointer',
   },
-  deleteButton: {
+  settingsButton: {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -274,63 +233,9 @@ const styles = {
     background: 'transparent',
     border: '1px solid #e5e5e5',
     borderRadius: '6px',
-    color: '#999',
+    color: '#666',
     cursor: 'pointer',
     marginLeft: 'auto',
-  },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-  },
-  modal: {
-    background: 'white',
-    borderRadius: '12px',
-    padding: '24px',
-    maxWidth: '400px',
-    width: '90%',
-  },
-  modalTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginBottom: '12px',
-  },
-  modalText: {
-    fontSize: '14px',
-    color: '#666',
-    marginBottom: '24px',
-    lineHeight: '1.6',
-  },
-  modalActions: {
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'flex-end',
-  },
-  cancelButton: {
-    padding: '10px 20px',
-    background: 'white',
-    border: '1px solid #e5e5e5',
-    borderRadius: '6px',
-    color: '#666',
-    fontSize: '14px',
-    cursor: 'pointer',
-  },
-  confirmDeleteButton: {
-    padding: '10px 20px',
-    background: '#dc2626',
-    border: 'none',
-    borderRadius: '6px',
-    color: 'white',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
+    transition: 'all 0.2s',
   },
 }

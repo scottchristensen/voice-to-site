@@ -56,7 +56,7 @@ const TIERS = [
 ]
 
 export default function ClaimModal({ site, isOpen, onClose }) {
-  const [selectedTier, setSelectedTier] = useState('pro')
+  const [selectedTier, setSelectedTier] = useState(null)
   const [subdomain, setSubdomain] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -113,6 +113,12 @@ export default function ClaimModal({ site, isOpen, onClose }) {
     e.preventDefault()
     setEmailError('')
     setError('')
+
+    // Validate tier selection
+    if (!selectedTier) {
+      setError('Please select a plan')
+      return
+    }
 
     // Validate email
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -382,6 +388,7 @@ const styles = {
     overflowX: 'auto',
     gap: '12px',
     marginBottom: '24px',
+    paddingTop: '14px',
     paddingBottom: '8px',
     scrollSnapType: 'x mandatory',
     WebkitOverflowScrolling: 'touch',

@@ -66,10 +66,6 @@ export default function DashboardSidebar({ userEmail }) {
             <GridIcon />
             My Sites
           </a>
-          <a href="/dashboard/new" style={styles.navLinkAccent}>
-            <PlusIcon />
-            Create New Site
-          </a>
           <a
             href="/billing"
             style={{
@@ -120,15 +116,6 @@ function GridIcon() {
       <rect x="14" y="3" width="7" height="7"></rect>
       <rect x="14" y="14" width="7" height="7"></rect>
       <rect x="3" y="14" width="7" height="7"></rect>
-    </svg>
-  )
-}
-
-function PlusIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '12px', flexShrink: 0 }}>
-      <line x1="12" y1="5" x2="12" y2="19"></line>
-      <line x1="5" y1="12" x2="19" y2="12"></line>
     </svg>
   )
 }
@@ -239,19 +226,6 @@ const styles = {
   navLinkActive: {
     background: 'rgba(255,255,255,0.1)',
     color: 'white',
-  },
-  navLinkAccent: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '12px 16px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '600',
-    transition: 'all 0.2s',
-    marginTop: '8px',
   },
   sidebarFooter: {
     padding: '16px',
