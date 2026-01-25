@@ -7,7 +7,8 @@ const translations = {
     nav: {
       logo: 'Speak to Site',
       howItWorks: 'How It Works',
-      pricing: 'Pricing'
+      pricing: 'Pricing',
+      login: 'Log In'
     },
     modal: {
       title: 'Your Website is Ready!',
@@ -92,7 +93,8 @@ const translations = {
     nav: {
       logo: 'Habla a Sitio',
       howItWorks: 'Cómo Funciona',
-      pricing: 'Precios'
+      pricing: 'Precios',
+      login: 'Iniciar Sesión'
     },
     modal: {
       title: '¡Tu Sitio Web Está Listo!',
@@ -335,6 +337,9 @@ export default function Home() {
           >
             {language === 'en' ? '🇪🇸 ES' : '🇺🇸 EN'}
           </button>
+          <a href="/login" style={styles.loginButton}>
+            {t.nav.login}
+          </a>
         </div>
       </nav>
 
@@ -750,15 +755,29 @@ const styles = {
     fontWeight: '500',
   },
   langToggle: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    border: 'none',
+    background: 'transparent',
+    color: '#555',
+    border: '1px solid #ddd',
     padding: '8px 16px',
     borderRadius: '6px',
-    fontWeight: '600',
+    fontWeight: '500',
     fontSize: '14px',
     cursor: 'pointer',
-    transition: 'transform 0.2s',
+    transition: 'all 0.2s',
+  },
+  loginButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '10px 20px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    textDecoration: 'none',
+    borderRadius: '8px',
+    fontWeight: '600',
+    fontSize: '14px',
+    transition: 'transform 0.2s, box-shadow 0.2s',
+    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
   },
   hero: {
     display: 'flex',
@@ -1106,8 +1125,9 @@ const styles = {
     color: '#b0b0b0',
   },
   langToggleDark: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    opacity: '0.9',
+    background: 'transparent',
+    color: '#b0b0b0',
+    border: '1px solid #444',
   },
   heroDark: {
     background: '#0a0a0a',

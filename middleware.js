@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 export const config = {
   matcher: [
@@ -7,9 +8,43 @@ export const config = {
   ],
 }
 
+// Routes that require authentication
+const protectedRoutes = ['/dashboard', '/account', '/billing']
+// Auth routes (login, signup) - redirect to dashboard if already logged in
+const authRoutes = ['/login', '/signup', '/forgot-password', '/reset-password']
+
 export async function middleware(request) {
   const url = request.nextUrl
   const hostname = request.headers.get('host') || ''
+  const pathname = url.pathname
+
+  // Create a Supabase client for auth checking
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+
+  // Refresh the session (important for keeping auth active)
+  const { data: { user } } = await supabase.auth.getUser()
 
   // Define allowed hosts (main domain variations)
   const mainHosts = [
@@ -20,8 +55,26 @@ export async function middleware(request) {
   ]
 
   // Check if this is the main domain (not a subdomain)
-  if (mainHosts.some(host => hostname === host)) {
-    return NextResponse.next()
+  const isMainDomain = mainHosts.some(host => hostname === host)
+
+  if (isMainDomain) {
+    // Handle protected routes - require authentication
+    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
+
+    if (isProtectedRoute && !user) {
+      // Not logged in, trying to access protected route - redirect to login
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    if (isAuthRoute && user) {
+      // Already logged in, trying to access auth routes - redirect to dashboard
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    return response
   }
 
   // Extract subdomain from hostname
