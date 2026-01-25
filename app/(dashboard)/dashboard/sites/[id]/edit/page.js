@@ -1,0 +1,27 @@
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import EditSiteClient from './EditSiteClient'
+
+export default async function EditSitePage({ params }) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Fetch the site data
+  const { data: site, error } = await supabase
+    .from('generated_sites')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error || !site) {
+    redirect('/dashboard?error=site_not_found')
+  }
+
+  // Verify ownership
+  if (site.email !== user.email) {
+    redirect('/dashboard?error=unauthorized')
+  }
+
+  return <EditSiteClient site={site} />
+}
