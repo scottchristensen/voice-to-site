@@ -1,12 +1,6 @@
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
+import crypto from 'crypto'
 
 // Tier pricing configuration
 const TIER_CONFIG = {
@@ -28,8 +22,14 @@ const TIER_CONFIG = {
 }
 
 export async function POST(request) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY
+  )
+
   try {
-    const { siteId, subdomain, email, phone, tier = 'pro' } = await request.json()
+    const { siteId, subdomain, email, phone, tier = 'pro', password } = await request.json()
 
     // Validate required fields
     if (!siteId || !subdomain || !email) {
@@ -106,6 +106,27 @@ export async function POST(request) {
       })
     }
 
+    // If password provided, store it temporarily with a token
+    let accountToken = null
+    if (password) {
+      accountToken = crypto.randomBytes(32).toString('hex')
+      // Store pending account with hashed password
+      const { error: pendingError } = await supabase
+        .from('pending_accounts')
+        .insert({
+          token: accountToken,
+          email,
+          password_hash: password, // Will be hashed by Supabase auth on creation
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hour expiry
+        })
+
+      if (pendingError) {
+        console.error('Failed to store pending account:', pendingError)
+        // Continue without password - user can set up later
+        accountToken = null
+      }
+    }
+
     // Create Stripe Checkout session for subscription
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
@@ -134,7 +155,8 @@ export async function POST(request) {
         subdomain: normalizedSubdomain,
         email,
         phone: phone || '',
-        plan_tier: tier
+        plan_tier: tier,
+        account_token: accountToken || ''
       }
     })
 
