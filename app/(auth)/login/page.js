@@ -18,13 +18,12 @@ export default function LoginPage() {
     return () => darkModeMediaQuery.removeEventListener('change', handleChange)
   }, [])
 
-  const supabase = createClient()
-
   const handleEmailLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -42,6 +41,7 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {

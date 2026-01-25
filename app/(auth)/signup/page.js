@@ -21,8 +21,6 @@ export default function SignupPage() {
     return () => darkModeMediaQuery.removeEventListener('change', handleChange)
   }, [])
 
-  const supabase = createClient()
-
   const handleEmailSignup = async (e) => {
     e.preventDefault()
     setError(null)
@@ -39,6 +37,7 @@ export default function SignupPage() {
 
     setLoading(true)
 
+    const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -63,6 +62,7 @@ export default function SignupPage() {
     setLoading(true)
     setError(null)
 
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
