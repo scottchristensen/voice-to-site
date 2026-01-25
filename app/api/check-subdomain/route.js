@@ -1,10 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
-
 // Reserved subdomains that can't be claimed
 const RESERVED_SUBDOMAINS = [
   'www', 'api', 'admin', 'app', 'mail', 'ftp', 'blog', 'shop', 'store',
@@ -52,6 +47,10 @@ export async function GET(request) {
   }
 
   // Check if subdomain is already taken
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY
+  )
   const { data: existing, error } = await supabase
     .from('generated_sites')
     .select('id')

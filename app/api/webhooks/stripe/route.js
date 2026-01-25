@@ -1,13 +1,6 @@
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-)
-
 // Lazy creation of admin client (only when needed at runtime)
 function getSupabaseAdmin() {
   return createClient(
@@ -17,6 +10,12 @@ function getSupabaseAdmin() {
 }
 
 export async function POST(request) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY
+  )
+
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
 
