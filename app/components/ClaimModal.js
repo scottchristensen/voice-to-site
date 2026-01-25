@@ -59,8 +59,6 @@ export default function ClaimModal({ site, isOpen, onClose }) {
   const [selectedTier, setSelectedTier] = useState('pro')
   const [subdomain, setSubdomain] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [phone, setPhone] = useState('')
   const [isAvailable, setIsAvailable] = useState(null)
   const [isChecking, setIsChecking] = useState(false)
@@ -68,7 +66,6 @@ export default function ClaimModal({ site, isOpen, onClose }) {
   const [error, setError] = useState('')
   const [availabilityError, setAvailabilityError] = useState('')
   const [emailError, setEmailError] = useState('')
-  const [usePassword, setUsePassword] = useState(false)
   const isMobile = useIsMobile()
 
   // Auto-suggest subdomain from business name
@@ -125,18 +122,6 @@ export default function ClaimModal({ site, isOpen, onClose }) {
 
     if (!isAvailable) return
 
-    // Validate password if using password auth
-    if (usePassword) {
-      if (password.length < 8) {
-        setError('Password must be at least 8 characters')
-        return
-      }
-      if (password !== confirmPassword) {
-        setError('Passwords do not match')
-        return
-      }
-    }
-
     setIsSubmitting(true)
 
     try {
@@ -148,8 +133,7 @@ export default function ClaimModal({ site, isOpen, onClose }) {
           subdomain,
           email,
           phone,
-          tier: selectedTier,
-          password: usePassword ? password : null
+          tier: selectedTier
         })
       })
 
@@ -290,62 +274,6 @@ export default function ClaimModal({ site, isOpen, onClose }) {
             />
             {emailError && <p style={styles.fieldError}>{emailError}</p>}
           </div>
-
-          {/* Account Creation Option */}
-          <div style={styles.accountOption}>
-            <div style={styles.accountToggle}>
-              <input
-                type="checkbox"
-                id="usePassword"
-                checked={usePassword}
-                onChange={(e) => setUsePassword(e.target.checked)}
-                style={styles.checkbox}
-              />
-              <label htmlFor="usePassword" style={styles.checkboxLabel}>
-                Create account with password
-              </label>
-            </div>
-            <p style={styles.accountHint}>
-              {usePassword
-                ? 'Set a password to access your dashboard'
-                : 'Or sign in with Google after checkout'}
-            </p>
-          </div>
-
-          {/* Password Fields (conditional) */}
-          {usePassword && (
-            <>
-              <div style={styles.field}>
-                <label style={styles.label}>Password *</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={styles.input}
-                  placeholder="At least 8 characters"
-                  minLength={8}
-                  required={usePassword}
-                />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>Confirm Password *</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  style={{
-                    ...styles.input,
-                    borderColor: confirmPassword && password !== confirmPassword ? '#ef4444' : '#e0e0e0'
-                  }}
-                  placeholder="Confirm your password"
-                  required={usePassword}
-                />
-                {confirmPassword && password !== confirmPassword && (
-                  <span style={styles.unavailable}>Passwords do not match</span>
-                )}
-              </div>
-            </>
-          )}
 
           {/* Phone Input */}
           <div style={styles.field}>
@@ -621,32 +549,5 @@ const styles = {
     padding: '16px',
     borderTop: '1px solid #e5e7eb',
     paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-  },
-  accountOption: {
-    marginBottom: '20px',
-    padding: '16px',
-    background: '#f8fafc',
-    borderRadius: '8px'
-  },
-  accountToggle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-  checkbox: {
-    width: '18px',
-    height: '18px',
-    cursor: 'pointer'
-  },
-  checkboxLabel: {
-    fontWeight: '500',
-    color: '#333',
-    cursor: 'pointer'
-  },
-  accountHint: {
-    fontSize: '13px',
-    color: '#666',
-    marginTop: '6px',
-    marginLeft: '26px'
   }
 }
