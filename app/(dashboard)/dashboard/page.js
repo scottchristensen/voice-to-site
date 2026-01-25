@@ -5,11 +5,11 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch user's sites (match by email or user_id)
+  // Fetch user's sites by email (primary method)
   const { data: sites, error } = await supabase
     .from('generated_sites')
     .select('*')
-    .or(`email.eq.${user.email},user_id.eq.${user.id}`)
+    .eq('email', user.email)
     .eq('payment_status', 'paid')
     .order('created_at', { ascending: false })
 

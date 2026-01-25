@@ -10,16 +10,21 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get the original site (verify ownership by email or user_id)
+  // Get the original site
   const { data: originalSite, error: fetchError } = await supabase
     .from('generated_sites')
     .select('*')
     .eq('id', id)
-    .or(`email.eq.${user.email},user_id.eq.${user.id}`)
     .single()
 
   if (fetchError || !originalSite) {
     return NextResponse.json({ error: 'Site not found' }, { status: 404 })
+  }
+
+  // Verify ownership (by email or user_id)
+  const isOwner = originalSite.email === user.email || originalSite.user_id === user.id
+  if (!isOwner) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
   // Create a duplicate (unpaid, no subdomain, linked to current user)
@@ -35,7 +40,6 @@ export async function POST(request, { params }) {
       status: 'preview',
       payment_status: 'unpaid',
       subscription_status: 'none',
-      user_id: user.id,
     })
     .select()
     .single()

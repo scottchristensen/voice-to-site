@@ -13,16 +13,21 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get the site (verify ownership by email or user_id)
+  // Get the site
   const { data: site, error: fetchError } = await supabase
     .from('generated_sites')
     .select('*')
     .eq('id', id)
-    .or(`email.eq.${user.email},user_id.eq.${user.id}`)
     .single()
 
   if (fetchError || !site) {
     return NextResponse.json({ error: 'Site not found' }, { status: 404 })
+  }
+
+  // Verify ownership (by email or user_id)
+  const isOwner = site.email === user.email || site.user_id === user.id
+  if (!isOwner) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
   // If site has an active subscription, cancel it first
