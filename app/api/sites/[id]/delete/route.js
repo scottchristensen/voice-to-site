@@ -13,12 +13,12 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get the site
+  // Get the site (verify ownership by email or user_id)
   const { data: site, error: fetchError } = await supabase
     .from('generated_sites')
     .select('*')
     .eq('id', id)
-    .eq('email', user.email)
+    .or(`email.eq.${user.email},user_id.eq.${user.id}`)
     .single()
 
   if (fetchError || !site) {

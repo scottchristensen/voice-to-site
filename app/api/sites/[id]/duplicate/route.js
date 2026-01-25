@@ -10,19 +10,19 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get the original site
+  // Get the original site (verify ownership by email or user_id)
   const { data: originalSite, error: fetchError } = await supabase
     .from('generated_sites')
     .select('*')
     .eq('id', id)
-    .eq('email', user.email)
+    .or(`email.eq.${user.email},user_id.eq.${user.id}`)
     .single()
 
   if (fetchError || !originalSite) {
     return NextResponse.json({ error: 'Site not found' }, { status: 404 })
   }
 
-  // Create a duplicate (unpaid, no subdomain)
+  // Create a duplicate (unpaid, no subdomain, linked to current user)
   const { data: newSite, error: insertError } = await supabase
     .from('generated_sites')
     .insert({
@@ -35,6 +35,7 @@ export async function POST(request, { params }) {
       status: 'preview',
       payment_status: 'unpaid',
       subscription_status: 'none',
+      user_id: user.id,
     })
     .select()
     .single()

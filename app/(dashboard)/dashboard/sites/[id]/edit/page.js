@@ -18,8 +18,8 @@ export default async function EditSitePage({ params }) {
     redirect('/dashboard?error=site_not_found')
   }
 
-  // Verify ownership
-  if (site.email !== user.email) {
+  // Verify ownership (by email or user_id)
+  if (site.email !== user.email && site.user_id !== user.id) {
     redirect('/dashboard?error=unauthorized')
   }
 
