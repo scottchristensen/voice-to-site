@@ -8,11 +8,13 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 )
 
-// Admin client for creating users
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+// Lazy creation of admin client (only when needed at runtime)
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+}
 
 export async function POST(request) {
   const body = await request.text()
@@ -43,6 +45,7 @@ export async function POST(request) {
         }
 
         let userId = null
+        const supabaseAdmin = getSupabaseAdmin()
 
         // Check if user already exists
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()

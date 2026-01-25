@@ -9,12 +9,6 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 )
 
-// Use Supabase with service role for admin operations
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
-
 export async function POST(request) {
   try {
     const { siteId, subdomain, email, phone, password } = await request.json()
