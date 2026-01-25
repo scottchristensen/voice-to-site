@@ -18,33 +18,42 @@ export async function middleware(request) {
   const hostname = request.headers.get('host') || ''
   const pathname = url.pathname
 
-  // Create a Supabase client for auth checking
+  // Create base response
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            response.cookies.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
+  // Check if Supabase env vars are available
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Refresh the session (important for keeping auth active)
-  const { data: { user } } = await supabase.auth.getUser()
+  let user = null
+
+  if (supabaseUrl && supabaseKey) {
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value)
+              response.cookies.set(name, value, options)
+            })
+          },
+        },
+      }
+    )
+
+    // Refresh the session (important for keeping auth active)
+    const { data } = await supabase.auth.getUser()
+    user = data?.user
+  }
 
   // Define allowed hosts (main domain variations)
   const mainHosts = [
@@ -104,18 +113,18 @@ export async function middleware(request) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
   try {
-    const response = await fetch(`${baseUrl}/api/lookup-subdomain?subdomain=${subdomain}`, {
+    const lookupResponse = await fetch(`${baseUrl}/api/lookup-subdomain?subdomain=${subdomain}`, {
       headers: {
         'x-middleware-request': 'true'
       }
     })
 
-    if (!response.ok) {
+    if (!lookupResponse.ok) {
       // Subdomain not found - redirect to main site
       return NextResponse.redirect(new URL('/', baseUrl))
     }
 
-    const data = await response.json()
+    const data = await lookupResponse.json()
 
     if (!data.siteId) {
       return NextResponse.redirect(new URL('/', baseUrl))
