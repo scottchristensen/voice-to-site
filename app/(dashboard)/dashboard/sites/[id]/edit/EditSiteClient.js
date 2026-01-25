@@ -5,7 +5,7 @@ import { useState, useRef } from 'react'
 export default function EditSiteClient({ site }) {
   const [isCallActive, setIsCallActive] = useState(false)
   const [callStatus, setCallStatus] = useState('idle')
-  const [previewUrl, setPreviewUrl] = useState(null)
+  const [currentHtml, setCurrentHtml] = useState(site.html_code)
   const vapiRef = useRef(null)
 
   const startVoiceAgent = async () => {
@@ -24,28 +24,30 @@ export default function EditSiteClient({ site }) {
 
         vapiRef.current.on('call-end', () => {
           setIsCallActive(false)
-          setCallStatus('ended')
+          setCallStatus('idle')
         })
 
         vapiRef.current.on('error', (error) => {
           console.error('Vapi error:', error)
-          setCallStatus('error')
+          setCallStatus('idle')
           setIsCallActive(false)
         })
 
         vapiRef.current.on('message', (message) => {
+          // Listen for updated HTML from the voice agent
           if (message.type === 'tool-call-result' || message.type === 'transcript') {
             const text = message.result || message.output || ''
+            // Check if there's a new preview URL (meaning site was updated)
             const urlMatch = text.match(/https?:\/\/[^\s"',]+\/preview\/[^\s"',]+/)
             if (urlMatch) {
-              setPreviewUrl(urlMatch[0])
-              setCallStatus('complete')
+              // Refresh the iframe with new content
+              window.location.reload()
             }
           }
         })
       }
 
-      // Start the assistant with context about editing this specific site
+      // Start the assistant with edit mode context
       await vapiRef.current.start(process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID, {
         variableValues: {
           mode: 'edit',
@@ -58,7 +60,7 @@ export default function EditSiteClient({ site }) {
 
     } catch (error) {
       console.error('Failed to start voice agent:', error)
-      setCallStatus('error')
+      setCallStatus('idle')
     }
   }
 
@@ -67,144 +69,113 @@ export default function EditSiteClient({ site }) {
       vapiRef.current.stop()
     }
     setIsCallActive(false)
-    setCallStatus('ended')
+    setCallStatus('idle')
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <a href="/dashboard" style={styles.backLink}>← Back to Dashboard</a>
-        <h1 style={styles.title}>Edit Site</h1>
-        <p style={styles.subtitle}>Make changes to your website with voice</p>
-      </div>
+    <div className="outer-wrapper" style={styles.outerWrapper}>
+      <style>{`
+        html, body {
+          margin: 0;
+          padding: 0;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.1); }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @media (max-width: 768px) {
+          .outer-wrapper {
+            padding: 12px !important;
+          }
+          .edit-header {
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
+          .header-right {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+        }
+      `}</style>
 
-      {/* Current Site Info */}
-      <div style={styles.siteInfo}>
-        <div style={styles.sitePreview}>
-          <div style={styles.previewPlaceholder}>
-            {site.business_name?.[0]?.toUpperCase() || 'S'}
-          </div>
+      {/* Edit Header */}
+      <div className="edit-header" style={styles.header}>
+        <a href="/dashboard" style={styles.backLink}>
+          <BackIcon />
+          Dashboard
+        </a>
+        <div style={styles.headerCenter}>
+          <span style={styles.editBadge}>
+            <EditIcon />
+            Editing Mode
+          </span>
+          <span style={styles.siteName}>{site.business_name || 'Untitled Site'}</span>
         </div>
-        <div style={styles.siteDetails}>
-          <h2 style={styles.siteName}>{site.business_name || 'Untitled Site'}</h2>
+        <div className="header-right" style={styles.headerRight}>
+          {callStatus === 'idle' && (
+            <button onClick={startVoiceAgent} style={styles.voiceButton}>
+              <MicrophoneIcon />
+              Edit with Voice
+            </button>
+          )}
+          {callStatus === 'connecting' && (
+            <button disabled style={styles.voiceButtonConnecting}>
+              <LoadingSpinner />
+              Connecting...
+            </button>
+          )}
+          {callStatus === 'active' && (
+            <button onClick={endCall} style={styles.voiceButtonActive}>
+              <span style={styles.pulse}></span>
+              End Call
+            </button>
+          )}
           <a
             href={`https://${site.subdomain}.speakyour.site`}
             target="_blank"
             rel="noopener noreferrer"
-            style={styles.siteUrl}
+            style={styles.viewLiveButton}
           >
-            {site.subdomain}.speakyour.site
-          </a>
-        </div>
-      </div>
-
-      <div style={styles.card}>
-        {callStatus === 'idle' && (
-          <div style={styles.startSection}>
-            <div style={styles.iconCircle}>
-              <EditIcon />
-            </div>
-            <h2 style={styles.cardTitle}>What would you like to change?</h2>
-            <p style={styles.cardText}>
-              Start a voice conversation to update your website. You can change colors,
-              text, images, add new sections, or redesign the layout.
-            </p>
-            <button onClick={startVoiceAgent} style={styles.startButton}>
-              <MicrophoneIcon />
-              Start Editing with Voice
-            </button>
-          </div>
-        )}
-
-        {callStatus === 'connecting' && (
-          <div style={styles.statusSection}>
-            <div style={styles.spinner}></div>
-            <h2 style={styles.cardTitle}>Connecting...</h2>
-            <p style={styles.cardText}>Please allow microphone access when prompted</p>
-          </div>
-        )}
-
-        {callStatus === 'active' && (
-          <div style={styles.statusSection}>
-            <div style={styles.pulsingCircle}>
-              <MicrophoneIcon />
-            </div>
-            <h2 style={styles.cardTitle}>Tell me what to change</h2>
-            <p style={styles.cardText}>
-              Describe the changes you want to make to your website
-            </p>
-            <button onClick={endCall} style={styles.endButton}>
-              End Conversation
-            </button>
-          </div>
-        )}
-
-        {callStatus === 'complete' && previewUrl && (
-          <div style={styles.successSection}>
-            <div style={styles.successIcon}>✓</div>
-            <h2 style={styles.cardTitle}>Changes Applied!</h2>
-            <p style={styles.cardText}>Preview your updated website</p>
-            <div style={styles.buttonGroup}>
-              <a href={previewUrl} target="_blank" rel="noopener noreferrer" style={styles.primaryButton}>
-                Preview Changes
-              </a>
-              <a href={`https://${site.subdomain}.speakyour.site`} target="_blank" rel="noopener noreferrer" style={styles.secondaryButton}>
-                View Live Site
-              </a>
-              <button onClick={() => { setCallStatus('idle'); setPreviewUrl(null); }} style={styles.tertiaryButton}>
-                Make More Changes
-              </button>
-            </div>
-          </div>
-        )}
-
-        {callStatus === 'ended' && !previewUrl && (
-          <div style={styles.statusSection}>
-            <h2 style={styles.cardTitle}>Conversation Ended</h2>
-            <p style={styles.cardText}>Want to make more changes?</p>
-            <button onClick={() => setCallStatus('idle')} style={styles.startButton}>
-              Continue Editing
-            </button>
-          </div>
-        )}
-
-        {callStatus === 'error' && (
-          <div style={styles.errorSection}>
-            <h2 style={styles.cardTitle}>Something went wrong</h2>
-            <p style={styles.cardText}>Please check your microphone permissions and try again</p>
-            <button onClick={() => setCallStatus('idle')} style={styles.startButton}>
-              Try Again
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Quick Actions */}
-      <div style={styles.quickActions}>
-        <h3 style={styles.quickActionsTitle}>Quick Actions</h3>
-        <div style={styles.actionButtons}>
-          <a
-            href={`https://${site.subdomain}.speakyour.site`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={styles.actionButton}
-          >
+            View Live
             <ExternalLinkIcon />
-            View Live Site
-          </a>
-          <a href="/billing" style={styles.actionButton}>
-            <CreditCardIcon />
-            Manage Billing
           </a>
         </div>
+      </div>
+
+      {/* Voice Call Indicator */}
+      {isCallActive && (
+        <div style={styles.callIndicator}>
+          <span style={styles.pulseIndicator}></span>
+          <span>Speaking with AI assistant - describe the changes you want to make</span>
+        </div>
+      )}
+
+      {/* Preview Container with grey border (edit mode indicator) */}
+      <div style={styles.previewContainer}>
+        <iframe
+          srcDoc={currentHtml}
+          style={styles.iframe}
+          title="Website Preview"
+        />
       </div>
     </div>
   )
 }
 
+function BackIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+  )
+}
+
 function MicrophoneIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
       <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
       <line x1="12" y1="19" x2="12" y2="23"></line>
@@ -215,7 +186,7 @@ function MicrophoneIcon() {
 
 function EditIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
     </svg>
@@ -224,7 +195,7 @@ function EditIcon() {
 
 function ExternalLinkIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '6px' }}>
       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
       <polyline points="15 3 21 3 21 9"></polyline>
       <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -232,256 +203,161 @@ function ExternalLinkIcon() {
   )
 }
 
-function CreditCardIcon() {
+function LoadingSpinner() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
-      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-      <line x1="1" y1="10" x2="23" y2="10"></line>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '8px', animation: 'spin 1s linear infinite' }}>
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
     </svg>
   )
 }
 
 const styles = {
-  container: {
-    padding: '32px',
-    maxWidth: '700px',
-    margin: '0 auto',
+  outerWrapper: {
+    height: '100vh',
+    background: '#f5f5f7',
+    padding: '16px 32px 32px 32px',
+    boxSizing: 'border-box',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    display: 'flex',
+    flexDirection: 'column',
   },
   header: {
-    marginBottom: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '16px',
+    gap: '16px',
+    flexWrap: 'wrap',
   },
   backLink: {
-    color: '#667eea',
+    display: 'inline-flex',
+    alignItems: 'center',
+    color: '#666',
     textDecoration: 'none',
     fontSize: '14px',
     fontWeight: '500',
-    display: 'inline-block',
-    marginBottom: '16px',
-  },
-  title: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#1a1a2e',
-    marginBottom: '8px',
-  },
-  subtitle: {
-    fontSize: '16px',
-    color: '#666',
-  },
-  siteInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    padding: '20px',
+    padding: '8px 12px',
+    borderRadius: '6px',
     background: 'white',
-    borderRadius: '12px',
-    marginBottom: '24px',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-    border: '1px solid #e5e7eb',
+    border: '1px solid #e5e5e5',
   },
-  sitePreview: {
-    width: '60px',
-    height: '60px',
-    borderRadius: '12px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  headerCenter: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  previewPlaceholder: {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: 'white',
-  },
-  siteDetails: {
+    gap: '12px',
     flex: 1,
-  },
-  siteName: {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginBottom: '4px',
-  },
-  siteUrl: {
-    fontSize: '14px',
-    color: '#667eea',
-    textDecoration: 'none',
-  },
-  card: {
-    background: 'white',
-    borderRadius: '16px',
-    padding: '48px',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-    textAlign: 'center',
-  },
-  startSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  statusSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  successSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  errorSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  iconCircle: {
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
-    color: 'white',
-    marginBottom: '24px',
   },
-  pulsingCircle: {
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'white',
-    marginBottom: '24px',
-    animation: 'pulse 2s infinite',
-  },
-  successIcon: {
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'white',
-    fontSize: '36px',
-    fontWeight: 'bold',
-    marginBottom: '24px',
-  },
-  spinner: {
-    width: '60px',
-    height: '60px',
-    border: '4px solid #e5e5e5',
-    borderTopColor: '#667eea',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
-    marginBottom: '24px',
-  },
-  cardTitle: {
-    fontSize: '24px',
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginBottom: '12px',
-  },
-  cardText: {
-    fontSize: '16px',
-    color: '#666',
-    marginBottom: '24px',
-    maxWidth: '400px',
-    lineHeight: '1.6',
-  },
-  startButton: {
+  editBadge: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '10px',
-    padding: '16px 32px',
+    padding: '6px 12px',
+    background: '#fef3c7',
+    color: '#92400e',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontWeight: '600',
+  },
+  siteName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  voiceButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '10px 20px',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
     border: 'none',
-    borderRadius: '12px',
-    fontSize: '16px',
+    borderRadius: '8px',
+    fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
   },
-  endButton: {
-    padding: '14px 28px',
+  voiceButtonConnecting: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '10px 20px',
+    background: '#9ca3af',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'not-allowed',
+  },
+  voiceButtonActive: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '10px 20px',
     background: '#ef4444',
     color: 'white',
     border: 'none',
-    borderRadius: '10px',
-    fontSize: '15px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  buttonGroup: {
-    display: 'flex',
-    gap: '12px',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  primaryButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '14px 28px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '10px',
-    fontSize: '15px',
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '14px 28px',
-    background: 'white',
-    color: '#667eea',
-    textDecoration: 'none',
-    border: '2px solid #667eea',
-    borderRadius: '10px',
-    fontSize: '15px',
-    fontWeight: '600',
-  },
-  tertiaryButton: {
-    padding: '14px 28px',
-    background: '#f5f5f5',
-    color: '#666',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '15px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  quickActions: {
-    marginTop: '32px',
-  },
-  quickActionsTitle: {
+    borderRadius: '8px',
     fontSize: '14px',
     fontWeight: '600',
-    color: '#888',
-    marginBottom: '12px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
   },
-  actionButtons: {
-    display: 'flex',
-    gap: '12px',
-    flexWrap: 'wrap',
+  pulse: {
+    width: '8px',
+    height: '8px',
+    background: 'white',
+    borderRadius: '50%',
+    marginRight: '8px',
+    animation: 'pulse 1.5s ease-in-out infinite',
   },
-  actionButton: {
+  viewLiveButton: {
     display: 'inline-flex',
     alignItems: 'center',
-    padding: '12px 20px',
+    padding: '10px 16px',
     background: 'white',
-    color: '#333',
+    color: '#374151',
     textDecoration: 'none',
+    border: '1px solid #e5e5e5',
     borderRadius: '8px',
     fontSize: '14px',
     fontWeight: '500',
-    border: '1px solid #e5e5e5',
+  },
+  callIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    padding: '12px 20px',
+    background: '#ecfdf5',
+    color: '#065f46',
+    borderRadius: '8px',
+    marginBottom: '16px',
+    fontSize: '14px',
+    fontWeight: '500',
+  },
+  pulseIndicator: {
+    width: '10px',
+    height: '10px',
+    background: '#10b981',
+    borderRadius: '50%',
+    animation: 'pulse 1.5s ease-in-out infinite',
+  },
+  previewContainer: {
+    flex: 1,
+    borderRadius: '12px',
+    overflow: 'hidden',
+    boxShadow: '0 25px 80px rgba(0, 0, 0, 0.2), 0 15px 40px rgba(0, 0, 0, 0.15), 0 5px 15px rgba(0, 0, 0, 0.1)',
+    border: '3px solid #fbbf24', // Yellow border to indicate edit mode
+  },
+  iframe: {
+    width: '100%',
+    height: '100%',
+    border: 'none',
+    display: 'block',
+    background: 'white',
   },
 }
