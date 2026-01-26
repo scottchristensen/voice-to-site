@@ -158,7 +158,7 @@ function SiteTableRow({ site }) {
       </td>
       <td style={styles.tableCell}>
         <span style={styles.planBadge}>
-          {site.plan_type || 'Standard'}
+          {(site.plan_tier || site.plan_type || 'pro').charAt(0).toUpperCase() + (site.plan_tier || site.plan_type || 'pro').slice(1)}
         </span>
       </td>
       <td style={styles.tableCellActions}>

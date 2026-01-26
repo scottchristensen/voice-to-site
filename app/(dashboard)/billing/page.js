@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import ManageButton from './ManageButton'
 
 // Pricing tiers matching ClaimModal
 const PLAN_PRICES = {
@@ -123,17 +124,6 @@ export default async function BillingPage() {
         </div>
       </div>
     </div>
-  )
-}
-
-// Client component for the manage button
-function ManageButton() {
-  return (
-    <form action="/api/billing/portal" method="GET">
-      <button type="submit" style={styles.manageButton}>
-        Manage Billing
-      </button>
-    </form>
   )
 }
 

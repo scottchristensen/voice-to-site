@@ -8,7 +8,7 @@ export async function GET(request) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
   // Get the user's stripe customer ID from their sites
@@ -21,8 +21,7 @@ export async function GET(request) {
     .limit(1)
 
   if (!sites || sites.length === 0 || !sites[0].stripe_customer_id) {
-    // No Stripe customer found - redirect back to billing with error
-    return NextResponse.redirect(new URL('/billing?error=no_customer', request.url))
+    return NextResponse.json({ error: 'No billing account found' }, { status: 404 })
   }
 
   try {
@@ -31,9 +30,9 @@ export async function GET(request) {
       return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://speakyour.site'}/billing`,
     })
 
-    return NextResponse.redirect(session.url)
+    return NextResponse.json({ url: session.url })
   } catch (error) {
     console.error('Stripe portal error:', error)
-    return NextResponse.redirect(new URL('/billing?error=portal_failed', request.url))
+    return NextResponse.json({ error: 'Failed to create portal session' }, { status: 500 })
   }
 }

@@ -14,7 +14,7 @@ export default function SiteSettingsModal({ site, isOpen, onClose }) {
 
   if (!isOpen) return null
 
-  const currentPlan = site.plan_type || 'standard'
+  const currentPlan = site.plan_tier || site.plan_type || 'pro'
   const deletePhrase = site.subdomain
 
   const handleUpdateGeneral = async () => {
@@ -139,26 +139,26 @@ export default function SiteSettingsModal({ site, isOpen, onClose }) {
 
   const plans = [
     {
-      id: 'starter',
-      name: 'Starter',
-      price: '$19',
+      id: 'basic',
+      name: 'Basic',
+      price: '$9',
       period: '/month',
-      features: ['Custom subdomain', 'Basic analytics', 'Email support'],
+      features: ['Hosting included', 'Custom subdomain', 'Contact forms', 'Email notifications'],
     },
     {
-      id: 'standard',
-      name: 'Standard',
+      id: 'pro',
+      name: 'Pro',
       price: '$29',
       period: '/month',
-      features: ['Everything in Starter', 'Priority support', 'Advanced analytics', 'Form submissions'],
+      features: ['Everything in Basic', 'Unlimited AI edits', 'Priority support'],
       popular: true,
     },
     {
       id: 'premium',
       name: 'Premium',
-      price: '$49',
+      price: '$59',
       period: '/month',
-      features: ['Everything in Standard', 'Custom domain', 'Remove branding', 'API access'],
+      features: ['Everything in Pro', '3 designer edits/month', 'Human-reviewed changes'],
     },
   ]
 
@@ -321,7 +321,7 @@ export default function SiteSettingsModal({ site, isOpen, onClose }) {
                     >
                       {plan.id === currentPlan
                         ? 'Current Plan'
-                        : plan.id === 'starter' && currentPlan !== 'starter'
+                        : plan.id === 'basic' && currentPlan !== 'basic'
                           ? 'Downgrade'
                           : 'Upgrade'}
                     </button>
