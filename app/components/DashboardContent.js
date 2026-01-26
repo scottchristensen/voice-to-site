@@ -9,6 +9,39 @@ export default function DashboardContent({ sites }) {
   return (
     <>
       <style>{`
+        /* Hover states for interactive elements */
+        .table-action {
+          transition: background 0.15s, color 0.15s, transform 0.15s !important;
+        }
+        .table-action:hover {
+          background: #f3f4f6 !important;
+          color: #667eea !important;
+        }
+        .table-action:active {
+          transform: scale(0.95);
+          background: #e5e7eb !important;
+        }
+        .view-toggle-btn:hover {
+          background: rgba(255,255,255,0.8) !important;
+        }
+        .view-toggle-btn:active {
+          transform: scale(0.95);
+        }
+        .create-button:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4) !important;
+        }
+        .create-button:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+        }
+        .table-subdomain:hover {
+          color: #764ba2 !important;
+          text-decoration: underline !important;
+        }
+        .table-row:hover {
+          background: #f9fafb !important;
+        }
         @media (max-width: 768px) {
           .dashboard-container {
             padding: 20px 16px !important;
@@ -45,6 +78,7 @@ export default function DashboardContent({ sites }) {
           <div style={styles.viewToggle}>
             <button
               onClick={() => setViewMode('tile')}
+              className="view-toggle-btn"
               style={{
                 ...styles.viewToggleBtn,
                 ...(viewMode === 'tile' ? styles.viewToggleBtnActive : {})
@@ -55,6 +89,7 @@ export default function DashboardContent({ sites }) {
             </button>
             <button
               onClick={() => setViewMode('table')}
+              className="view-toggle-btn"
               style={{
                 ...styles.viewToggleBtn,
                 ...(viewMode === 'table' ? styles.viewToggleBtnActive : {})
@@ -64,14 +99,17 @@ export default function DashboardContent({ sites }) {
               <ListIcon />
             </button>
           </div>
-          <a href="/dashboard/new" style={styles.createButton}>
+          <a href="/dashboard/new" className="create-button" style={styles.createButton}>
             <PlusIcon />
             <span className="create-btn-text" style={styles.createButtonText}>Create New Site</span>
           </a>
         </div>
       </div>
 
-      <div className="dashboard-container" style={styles.container}>
+      <div className="dashboard-container" style={{
+        ...styles.container,
+        ...(viewMode === 'table' ? { maxWidth: 'none' } : {})
+      }}>
 
       {/* Sites Display */}
       {sites && sites.length > 0 ? (
@@ -123,8 +161,29 @@ export default function DashboardContent({ sites }) {
 }
 
 function SiteTableRow({ site }) {
+  const [isDuplicating, setIsDuplicating] = useState(false)
+
+  const handleDuplicate = async () => {
+    setIsDuplicating(true)
+    try {
+      const response = await fetch(`/api/sites/${site.id}/duplicate`, {
+        method: 'POST',
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        window.location.href = data.previewUrl
+      } else {
+        alert('Failed to duplicate site: ' + data.error)
+      }
+    } catch {
+      alert('Failed to duplicate site')
+    }
+    setIsDuplicating(false)
+  }
+
   return (
-    <tr style={styles.tableRow}>
+    <tr className="table-row" style={styles.tableRow}>
       <td style={styles.tableCell}>
         <div style={styles.tableSiteInfo}>
           <div style={styles.tableSiteAvatar}>
@@ -138,6 +197,7 @@ function SiteTableRow({ site }) {
           href={`https://${site.subdomain}.speakyour.site`}
           target="_blank"
           rel="noopener noreferrer"
+          className="table-subdomain"
           style={styles.tableSubdomain}
         >
           {site.subdomain}.speakyour.site
@@ -166,17 +226,24 @@ function SiteTableRow({ site }) {
           href={`https://${site.subdomain}.speakyour.site`}
           target="_blank"
           rel="noopener noreferrer"
+          className="table-action"
           style={styles.tableAction}
           title="View site"
         >
           <ExternalLinkIcon />
         </a>
-        <a href={`/dashboard/sites/${site.id}/edit`} style={styles.tableAction} title="Edit site">
+        <a href={`/dashboard/sites/${site.id}/edit`} className="table-action" style={styles.tableAction} title="Edit site">
           <EditIcon />
         </a>
-        <a href={`/dashboard/sites/${site.id}/plan`} style={styles.tableAction} title="Manage plan">
-          <CreditCardIcon />
-        </a>
+        <button
+          onClick={handleDuplicate}
+          disabled={isDuplicating}
+          className="table-action"
+          style={styles.tableActionButton}
+          title="Duplicate site"
+        >
+          {isDuplicating ? '...' : <CopyIcon />}
+        </button>
       </td>
     </tr>
   )
@@ -593,6 +660,21 @@ const styles = {
     color: '#666',
     textDecoration: 'none',
     marginLeft: '8px',
+    transition: 'background 0.15s, color 0.15s',
+  },
+  tableActionButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    background: '#f3f4f6',
+    borderRadius: '6px',
+    color: '#666',
+    border: 'none',
+    marginLeft: '8px',
+    cursor: 'pointer',
+    transition: 'background 0.15s, color 0.15s',
   },
   // Empty state
   emptyState: {

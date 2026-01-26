@@ -28,9 +28,29 @@ export default function ManageButton({ customerId }) {
   }
 
   return (
-    <button onClick={handleClick} disabled={isLoading || !customerId} style={styles.manageButton}>
-      {isLoading ? 'Loading...' : 'Manage'}
-    </button>
+    <>
+      <style>{`
+        .manage-button:hover:not(:disabled) {
+          background: #667eea !important;
+          color: white !important;
+        }
+        .manage-button:active:not(:disabled) {
+          transform: scale(0.98);
+        }
+        .manage-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      `}</style>
+      <button
+        onClick={handleClick}
+        disabled={isLoading || !customerId}
+        className="manage-button"
+        style={styles.manageButton}
+      >
+        {isLoading ? 'Loading...' : 'Manage'}
+      </button>
+    </>
   )
 }
 

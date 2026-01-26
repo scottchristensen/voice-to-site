@@ -36,11 +36,21 @@ export default async function BillingPage() {
   }, 0) : 0
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>Billing</h1>
-        <p style={styles.subtitle}>Manage your subscriptions and payment methods</p>
-      </div>
+    <>
+      <style>{`
+        .create-link:hover {
+          color: #764ba2 !important;
+          text-decoration: underline !important;
+        }
+        .subscription-card:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+        }
+      `}</style>
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>Billing</h1>
+          <p style={styles.subtitle}>Manage your subscriptions and payment methods</p>
+        </div>
 
       {/* Summary Card */}
       <div style={styles.summaryCard}>
@@ -62,7 +72,7 @@ export default async function BillingPage() {
         {sites && sites.length > 0 ? (
           <div style={styles.subscriptionsList}>
             {sites.map((site) => (
-              <div key={site.id} style={styles.subscriptionCard}>
+              <div key={site.id} className="subscription-card" style={styles.subscriptionCard}>
                 <div style={styles.subscriptionInfo}>
                   <h3 style={styles.siteName}>{site.business_name || 'Untitled Site'}</h3>
                   <p style={styles.siteUrl}>{site.subdomain}.speakyour.site</p>
@@ -93,7 +103,7 @@ export default async function BillingPage() {
         ) : (
           <div style={styles.emptyState}>
             <p style={styles.emptyText}>No active subscriptions</p>
-            <a href="/dashboard/new" style={styles.createLink}>Create your first site</a>
+            <a href="/dashboard/new" className="create-link" style={styles.createLink}>Create your first site</a>
           </div>
         )}
       </div>
@@ -122,7 +132,8 @@ export default async function BillingPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 

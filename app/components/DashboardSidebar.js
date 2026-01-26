@@ -16,11 +16,38 @@ export default function DashboardSidebar({ userEmail }) {
 
   return (
     <>
+      <style>{`
+        .nav-link {
+          transition: all 0.2s !important;
+        }
+        .nav-link:hover {
+          background: rgba(255,255,255,0.15) !important;
+          color: white !important;
+        }
+        .nav-link:active {
+          background: rgba(255,255,255,0.2) !important;
+          transform: scale(0.98);
+        }
+        .signout-button:hover {
+          background: rgba(255,255,255,0.15) !important;
+          color: white !important;
+        }
+        .signout-button:active {
+          transform: scale(0.98);
+        }
+        .hamburger:hover {
+          opacity: 0.8;
+        }
+        .hamburger:active {
+          transform: scale(0.95);
+        }
+      `}</style>
       {/* Mobile Header */}
       <div className="mobile-header" style={styles.mobileHeader}>
         <a href="/" style={styles.mobileLogo}>Speak to Site</a>
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="hamburger"
           style={styles.hamburger}
           aria-label="Toggle menu"
         >
@@ -58,6 +85,7 @@ export default function DashboardSidebar({ userEmail }) {
         <nav style={styles.nav}>
           <a
             href="/dashboard"
+            className="nav-link"
             style={{
               ...styles.navLink,
               ...(isActive('/dashboard') ? styles.navLinkActive : {})
@@ -68,6 +96,7 @@ export default function DashboardSidebar({ userEmail }) {
           </a>
           <a
             href="/billing"
+            className="nav-link"
             style={{
               ...styles.navLink,
               ...(isActive('/billing') ? styles.navLinkActive : {})
@@ -78,6 +107,7 @@ export default function DashboardSidebar({ userEmail }) {
           </a>
           <a
             href="/account"
+            className="nav-link"
             style={{
               ...styles.navLink,
               ...(isActive('/account') ? styles.navLinkActive : {})
@@ -98,7 +128,7 @@ export default function DashboardSidebar({ userEmail }) {
             </div>
           </div>
           <form action="/api/auth/signout" method="POST">
-            <button type="submit" style={styles.signoutButton}>
+            <button type="submit" className="signout-button" style={styles.signoutButton}>
               Sign Out
             </button>
           </form>

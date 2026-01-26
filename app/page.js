@@ -298,6 +298,52 @@ export default function Home() {
 
   return (
     <div style={{...styles.container, ...(isDarkMode && styles.containerDark)}}>
+      <style>{`
+        /* Hover states for interactive elements */
+        .home-nav-link {
+          transition: color 0.2s, opacity 0.2s !important;
+        }
+        .home-nav-link:hover {
+          color: #667eea !important;
+        }
+        .lang-toggle:hover {
+          background: rgba(102, 126, 234, 0.1) !important;
+          border-color: #667eea !important;
+          color: #667eea !important;
+        }
+        .lang-toggle:active {
+          transform: scale(0.98);
+        }
+        .login-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+        }
+        .login-btn:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+        }
+        .cta-btn:hover:not(:disabled) {
+          transform: scale(1.02);
+          box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4) !important;
+        }
+        .cta-btn:active:not(:disabled) {
+          transform: scale(0.98);
+        }
+        .modal-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+        }
+        .modal-close:hover {
+          color: #667eea !important;
+        }
+        .pricing-card {
+          transition: transform 0.2s, box-shadow 0.2s !important;
+        }
+        .pricing-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+        }
+      `}</style>
       {/* Success Modal */}
       {showModal && previewUrl && (
         <div style={styles.modalOverlay} onClick={() => setShowModal(false)}>
@@ -311,12 +357,14 @@ export default function Home() {
               href={previewUrl}
               target="_blank"
               rel="noopener noreferrer"
+              className="modal-btn"
               style={styles.modalButton}
             >
               {t.modal.viewButton}
             </a>
             <button
               onClick={() => setShowModal(false)}
+              className="modal-close"
               style={styles.modalClose}
             >
               {t.modal.close}
@@ -329,15 +377,16 @@ export default function Home() {
       <nav style={{...styles.nav, ...(isDarkMode && styles.navDark)}}>
         <div style={styles.logo}>{t.nav.logo}</div>
         <div style={styles.navLinks}>
-          <a href="#how-it-works" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.howItWorks}</a>
-          <a href="#pricing" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.pricing}</a>
+          <a href="#how-it-works" className="home-nav-link" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.howItWorks}</a>
+          <a href="#pricing" className="home-nav-link" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.pricing}</a>
           <button
             onClick={() => setLanguage(language === 'en' ? 'es' : 'en')}
+            className="lang-toggle"
             style={{...styles.langToggle, ...(isDarkMode && styles.langToggleDark)}}
           >
             {language === 'en' ? '🇪🇸 ES' : '🇺🇸 EN'}
           </button>
-          <a href="/login" style={styles.loginButton}>
+          <a href="/login" className="login-btn" style={styles.loginButton}>
             {t.nav.login}
           </a>
         </div>
@@ -358,6 +407,7 @@ export default function Home() {
           <button
             onClick={isCallActive ? endCall : startCall}
             disabled={callStatus === 'connecting'}
+            className="cta-btn"
             style={{
               ...styles.ctaButton,
               ...(isCallActive ? styles.ctaButtonActive : {}),
@@ -543,7 +593,7 @@ export default function Home() {
       <section id="pricing" style={{...styles.pricingSection, ...(isDarkMode && styles.pricingSectionDark)}}>
         <h2 style={{...styles.sectionTitle, ...(isDarkMode && styles.sectionTitleDark)}}>{t.pricing.title}</h2>
         <div style={styles.pricingCards}>
-          <div style={{...styles.pricingCard, ...(isDarkMode && styles.pricingCardDark)}}>
+          <div className="pricing-card" style={{...styles.pricingCard, ...(isDarkMode && styles.pricingCardDark)}}>
             <h3 style={styles.pricingTitle}>{t.pricing.basic.title}</h3>
             <div style={styles.pricingPrice}>{t.pricing.basic.price}</div>
             <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>{t.pricing.basic.period}</p>
@@ -551,7 +601,7 @@ export default function Home() {
               {t.pricing.basic.features.map((feature, i) => <li key={i}>{feature}</li>)}
             </ul>
           </div>
-          <div style={{ ...styles.pricingCard, ...styles.pricingCardFeatured, ...(isDarkMode && styles.pricingCardDark) }}>
+          <div className="pricing-card" style={{ ...styles.pricingCard, ...styles.pricingCardFeatured, ...(isDarkMode && styles.pricingCardDark) }}>
             <div style={styles.pricingBadge}>{t.pricing.pro.badge}</div>
             <h3 style={styles.pricingTitle}>{t.pricing.pro.title}</h3>
             <div style={styles.pricingPrice}>{t.pricing.pro.price}</div>
@@ -560,7 +610,7 @@ export default function Home() {
               {t.pricing.pro.features.map((feature, i) => <li key={i}>{feature}</li>)}
             </ul>
           </div>
-          <div style={{...styles.pricingCard, ...(isDarkMode && styles.pricingCardDark)}}>
+          <div className="pricing-card" style={{...styles.pricingCard, ...(isDarkMode && styles.pricingCardDark)}}>
             <h3 style={styles.pricingTitle}>{t.pricing.premium.title}</h3>
             <div style={styles.pricingPrice}>{t.pricing.premium.price}</div>
             <p style={{...styles.pricingDesc, ...(isDarkMode && styles.pricingDescDark)}}>{t.pricing.premium.period}</p>
