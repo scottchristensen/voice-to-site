@@ -14,11 +14,11 @@ export default function DashboardContent({ sites }) {
             padding: 20px 16px !important;
           }
           .dashboard-header {
-            flex-direction: column !important;
-            align-items: stretch !important;
+            padding: 20px 16px !important;
+            padding-bottom: 0 !important;
           }
           .header-right {
-            justify-content: space-between !important;
+            justify-content: flex-end !important;
           }
           .create-btn-text {
             display: none !important;
@@ -31,12 +31,14 @@ export default function DashboardContent({ sites }) {
           }
         }
       `}</style>
-      <div className="dashboard-container" style={styles.container}>
-      {/* Header */}
-      <div className="dashboard-header" style={styles.header}>
-        <div style={styles.headerLeft}>
-          <h1 style={styles.title}>My Sites</h1>
-          <p style={styles.subtitle}>Manage and edit your websites</p>
+      <div style={styles.pageWrapper}>
+      {/* Header - Full Width */}
+      <div className="dashboard-header" style={styles.headerWrapper}>
+        <div style={styles.headerInner}>
+          <div style={styles.headerLeft}>
+            <h1 style={styles.title}>My Sites</h1>
+            <p style={styles.subtitle}>Manage and edit your websites</p>
+          </div>
         </div>
         <div className="header-right" style={styles.headerRight}>
           {/* View Toggle */}
@@ -68,6 +70,8 @@ export default function DashboardContent({ sites }) {
           </a>
         </div>
       </div>
+
+      <div className="dashboard-container" style={styles.container}>
 
       {/* Sites Display */}
       {sites && sites.length > 0 ? (
@@ -113,6 +117,7 @@ export default function DashboardContent({ sites }) {
         </div>
       )}
       </div>
+    </div>
     </>
   )
 }
@@ -268,17 +273,26 @@ function TrashIcon() {
 }
 
 const styles = {
-  container: {
-    padding: '32px',
-    maxWidth: '1200px',
+  pageWrapper: {
+    minHeight: '100%',
   },
-  header: {
+  headerWrapper: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: '32px',
+    padding: '32px',
+    paddingBottom: '0',
     flexWrap: 'wrap',
     gap: '16px',
+  },
+  headerInner: {
+    flex: 1,
+    minWidth: '200px',
+  },
+  container: {
+    padding: '32px',
+    paddingTop: '24px',
+    maxWidth: '1200px',
   },
   headerLeft: {
     flex: 1,
