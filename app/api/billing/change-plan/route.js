@@ -5,8 +5,8 @@ import { NextResponse } from 'next/server'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 const PLAN_PRICES = {
-  starter: process.env.STRIPE_STARTER_PRICE_ID || 'price_starter',
-  standard: process.env.STRIPE_STANDARD_PRICE_ID || 'price_standard',
+  basic: process.env.STRIPE_BASIC_PRICE_ID || 'price_basic',
+  pro: process.env.STRIPE_PRO_PRICE_ID || 'price_pro',
   premium: process.env.STRIPE_PREMIUM_PRICE_ID || 'price_premium',
 }
 
@@ -53,10 +53,10 @@ export async function POST(request) {
           proration_behavior: 'create_prorations',
         })
 
-        // Update the plan type in the database
+        // Update the plan tier in the database
         await supabase
           .from('generated_sites')
-          .update({ plan_type: newPlan })
+          .update({ plan_tier: newPlan })
           .eq('id', siteId)
 
         return NextResponse.json({ success: true })
