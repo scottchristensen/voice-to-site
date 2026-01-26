@@ -53,10 +53,6 @@ export default async function BillingPage() {
           <span style={styles.summaryLabel}>Monthly Total</span>
           <span style={styles.summaryValue}>${totalMonthly}/mo</span>
         </div>
-        <div style={styles.summaryDivider}></div>
-        <div style={styles.summaryItem}>
-          <ManageButton />
-        </div>
       </div>
 
       {/* Subscriptions List */}
@@ -87,6 +83,9 @@ export default async function BillingPage() {
                   <span style={styles.dateLabel}>
                     Started: {site.claimed_at ? new Date(site.claimed_at).toLocaleDateString() : 'N/A'}
                   </span>
+                </div>
+                <div style={styles.subscriptionActions}>
+                  <ManageButton customerId={site.stripe_customer_id} />
                 </div>
               </div>
             ))}
@@ -263,6 +262,9 @@ const styles = {
   dateLabel: {
     fontSize: '12px',
     color: '#888',
+  },
+  subscriptionActions: {
+    marginLeft: 'auto',
   },
   emptyState: {
     background: 'white',

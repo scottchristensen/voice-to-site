@@ -11,22 +11,29 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  // Get the user's stripe customer ID from their sites
+  // Get customerId from query params
+  const { searchParams } = new URL(request.url)
+  const customerId = searchParams.get('customerId')
+
+  if (!customerId) {
+    return NextResponse.json({ error: 'Customer ID required' }, { status: 400 })
+  }
+
+  // Verify the user owns a site with this customer ID
   const { data: sites } = await supabase
     .from('generated_sites')
     .select('stripe_customer_id')
     .eq('email', user.email)
-    .eq('payment_status', 'paid')
-    .not('stripe_customer_id', 'is', null)
+    .eq('stripe_customer_id', customerId)
     .limit(1)
 
-  if (!sites || sites.length === 0 || !sites[0].stripe_customer_id) {
-    return NextResponse.json({ error: 'No billing account found' }, { status: 404 })
+  if (!sites || sites.length === 0) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
   try {
     const session = await stripe.billingPortal.sessions.create({
-      customer: sites[0].stripe_customer_id,
+      customer: customerId,
       return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://speakyour.site'}/billing`,
     })
 

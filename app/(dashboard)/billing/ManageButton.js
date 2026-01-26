@@ -2,13 +2,18 @@
 
 import { useState } from 'react'
 
-export default function ManageButton() {
+export default function ManageButton({ customerId }) {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleClick = async () => {
+    if (!customerId) {
+      alert('No billing account found for this site.')
+      return
+    }
+
     setIsLoading(true)
     try {
-      const response = await fetch('/api/billing/portal')
+      const response = await fetch(`/api/billing/portal?customerId=${customerId}`)
       const data = await response.json()
 
       if (data.url) {
@@ -23,21 +28,22 @@ export default function ManageButton() {
   }
 
   return (
-    <button onClick={handleClick} disabled={isLoading} style={styles.manageButton}>
-      {isLoading ? 'Loading...' : 'Manage Billing'}
+    <button onClick={handleClick} disabled={isLoading || !customerId} style={styles.manageButton}>
+      {isLoading ? 'Loading...' : 'Manage'}
     </button>
   )
 }
 
 const styles = {
   manageButton: {
-    padding: '12px 24px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '600',
+    padding: '8px 16px',
+    background: 'white',
+    color: '#667eea',
+    border: '1px solid #667eea',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontWeight: '500',
     cursor: 'pointer',
+    transition: 'all 0.2s',
   },
 }
