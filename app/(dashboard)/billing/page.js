@@ -1,5 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
 
+// Pricing tiers matching ClaimModal
+const PLAN_PRICES = {
+  basic: 9,
+  pro: 29,
+  premium: 59,
+}
+
+function getPlanPrice(planTier) {
+  return PLAN_PRICES[planTier] || PLAN_PRICES.pro
+}
+
+function getPlanName(planTier) {
+  const names = { basic: 'Basic', pro: 'Pro', premium: 'Premium' }
+  return names[planTier] || 'Pro'
+}
+
 export default async function BillingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -12,7 +28,11 @@ export default async function BillingPage() {
     .eq('payment_status', 'paid')
     .order('claimed_at', { ascending: false })
 
-  const totalMonthly = sites ? sites.length * 29 : 0
+  // Calculate total based on actual plan tiers
+  const totalMonthly = sites ? sites.reduce((sum, site) => {
+    const planTier = site.plan_tier || site.plan_type || 'pro'
+    return sum + getPlanPrice(planTier)
+  }, 0) : 0
 
   return (
     <div style={styles.container}>
@@ -51,13 +71,16 @@ export default async function BillingPage() {
                   <p style={styles.siteUrl}>{site.subdomain}.speakyour.site</p>
                 </div>
                 <div style={styles.subscriptionMeta}>
+                  <span style={styles.planBadge}>
+                    {getPlanName(site.plan_tier || site.plan_type)}
+                  </span>
                   <span style={{
                     ...styles.statusBadge,
                     ...(site.subscription_status === 'active' ? styles.statusActive : styles.statusInactive)
                   }}>
                     {site.subscription_status === 'active' ? 'Active' : site.subscription_status}
                   </span>
-                  <span style={styles.price}>$29/mo</span>
+                  <span style={styles.price}>${getPlanPrice(site.plan_tier || site.plan_type)}/mo</span>
                 </div>
                 <div style={styles.subscriptionDates}>
                   <span style={styles.dateLabel}>
@@ -230,6 +253,14 @@ const styles = {
   statusInactive: {
     background: '#fee2e2',
     color: '#dc2626',
+  },
+  planBadge: {
+    padding: '4px 12px',
+    borderRadius: '20px',
+    fontSize: '12px',
+    fontWeight: '600',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
   },
   price: {
     fontSize: '16px',
