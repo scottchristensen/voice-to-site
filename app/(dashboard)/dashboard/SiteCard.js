@@ -40,14 +40,17 @@ export default function SiteCard({ site }) {
         method: 'DELETE',
       })
       const data = await response.json()
+      console.log('Delete response:', data)
 
       if (data.success) {
-        window.location.reload()
+        // Preserve the current view mode (tile view)
+        window.location.href = '/dashboard?view=tile'
       } else {
-        alert('Failed to delete site: ' + data.error)
+        alert('Failed to delete site: ' + (data.error || 'Unknown error'))
       }
-    } catch {
-      alert('Failed to delete site')
+    } catch (err) {
+      console.error('Delete error:', err)
+      alert('Failed to delete site: ' + err.message)
     }
     setIsDeleting(false)
     setShowDeleteConfirm(false)

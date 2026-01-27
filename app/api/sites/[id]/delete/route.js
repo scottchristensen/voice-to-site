@@ -1,6 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+
+// Admin client for operations that need to bypass RLS
+function getSupabaseAdmin() {
+  return createSupabaseClient(
+    process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+}
 
 export async function DELETE(request, { params }) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
@@ -12,8 +21,11 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Use admin client to get and delete the site (bypasses RLS)
+  const adminSupabase = getSupabaseAdmin()
+
   // Get the site
-  const { data: site, error: fetchError } = await supabase
+  const { data: site, error: fetchError } = await adminSupabase
     .from('generated_sites')
     .select('*')
     .eq('id', id)
@@ -34,14 +46,14 @@ export async function DELETE(request, { params }) {
 
   if (isDraft) {
     // Hard delete for draft sites - they were never claimed
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await adminSupabase
       .from('generated_sites')
       .delete()
       .eq('id', id)
 
     if (deleteError) {
       console.error('Delete error:', deleteError)
-      return NextResponse.json({ error: 'Failed to delete site' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to delete site: ' + deleteError.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, hardDelete: true })
@@ -58,7 +70,7 @@ export async function DELETE(request, { params }) {
   }
 
   // Soft delete for claimed sites - we keep the record but remove subdomain
-  const { error: updateError } = await supabase
+  const { error: updateError } = await adminSupabase
     .from('generated_sites')
     .update({
       subdomain: null,

@@ -1,10 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import SiteCard from '../(dashboard)/dashboard/SiteCard'
 
 export default function DashboardContent({ sites }) {
-  const [viewMode, setViewMode] = useState('tile') // 'tile' or 'table'
+  // Initialize view mode from URL or localStorage
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      return params.get('view') || localStorage.getItem('dashboardViewMode') || 'tile'
+    }
+    return 'tile'
+  })
+
+  // Persist view mode changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dashboardViewMode', viewMode)
+    }
+  }, [viewMode])
 
   return (
     <>
@@ -227,14 +241,17 @@ function SiteTableRow({ site }) {
         method: 'DELETE',
       })
       const data = await response.json()
+      console.log('Delete response:', data)
 
       if (data.success) {
-        window.location.reload()
+        // Preserve the current view mode in the URL
+        window.location.href = '/dashboard?view=table'
       } else {
-        alert('Failed to delete site: ' + data.error)
+        alert('Failed to delete site: ' + (data.error || 'Unknown error'))
       }
-    } catch {
-      alert('Failed to delete site')
+    } catch (err) {
+      console.error('Delete error:', err)
+      alert('Failed to delete site: ' + err.message)
     }
     setIsDeleting(false)
     setShowDeleteConfirm(false)
