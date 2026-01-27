@@ -549,21 +549,6 @@ export default function Home() {
         {/* Demo Preview */}
         <div style={styles.heroImage}>
           <div style={styles.interactionMockup}>
-            {/* Microphone/Voice Indicator */}
-            <div style={styles.microphoneContainer}>
-              <div style={styles.soundWave}></div>
-              <div style={styles.soundWave}></div>
-              <div style={styles.soundWave}></div>
-              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={styles.microphoneIcon}>
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                <line x1="12" x2="12" y1="19" y2="22"></line>
-              </svg>
-            </div>
-
-            {/* Arrow pointing to website */}
-            <div style={styles.arrow}>↘</div>
-
             {/* Generated Website Preview */}
             <div style={styles.browserMockup}>
               <div style={styles.browserBar}>
@@ -579,6 +564,18 @@ export default function Home() {
                   <div style={styles.mockupLineShort}></div>
                 </div>
               </div>
+            </div>
+
+            {/* Microphone/Voice Indicator - Overlayed on top right */}
+            <div style={styles.microphoneContainer}>
+              <div style={styles.soundWave}></div>
+              <div style={styles.soundWave}></div>
+              <div style={styles.soundWave}></div>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={styles.microphoneIcon}>
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" x2="12" y1="19" y2="22"></line>
+              </svg>
             </div>
           </div>
         </div>
@@ -1076,22 +1073,24 @@ const styles = {
     justifyContent: 'center',
   },
   interactionMockup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '24px',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  microphoneContainer: {
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '120px',
-    height: '120px',
+  },
+  microphoneContainer: {
+    position: 'absolute',
+    top: '-20px',
+    right: '-30px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100px',
+    height: '100px',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     borderRadius: '50%',
     boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
+    zIndex: 10,
   },
   soundWave: {
     position: 'absolute',
@@ -1105,14 +1104,9 @@ const styles = {
     position: 'relative',
     zIndex: 1,
   },
-  arrow: {
-    fontSize: '48px',
-    color: '#667eea',
-    fontWeight: 'bold',
-  },
   browserMockup: {
     width: '100%',
-    maxWidth: '280px',
+    maxWidth: '340px',
     background: 'white',
     borderRadius: '12px',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
@@ -1136,8 +1130,8 @@ const styles = {
     padding: '20px',
   },
   mockupHero: {
-    height: '120px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    height: '140px',
+    background: '#374151',
     borderRadius: '8px',
     marginBottom: '16px',
   },
