@@ -56,16 +56,20 @@ const TIERS = [
 ]
 
 export default function ClaimModal({ site, isOpen, onClose }) {
-  const [selectedTier, setSelectedTier] = useState(null)
+  const [step, setStep] = useState(1) // 1 = Plan, 2 = Account
+  const [selectedTier, setSelectedTier] = useState('pro') // Auto-select Pro
   const [subdomain, setSubdomain] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [isAvailable, setIsAvailable] = useState(null)
   const [isChecking, setIsChecking] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [availabilityError, setAvailabilityError] = useState('')
   const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
   const isMobile = useIsMobile()
 
   // Auto-suggest subdomain from business name
@@ -109,9 +113,8 @@ export default function ClaimModal({ site, isOpen, onClose }) {
     return () => clearTimeout(timer)
   }, [subdomain])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setEmailError('')
+  // Handle Step 1 -> Step 2 transition
+  const handleContinue = () => {
     setError('')
 
     // Validate tier selection
@@ -120,13 +123,39 @@ export default function ClaimModal({ site, isOpen, onClose }) {
       return
     }
 
+    // Validate subdomain availability
+    if (!isAvailable) {
+      setError('Please enter an available subdomain')
+      return
+    }
+
+    setStep(2)
+  }
+
+  // Handle Step 2 -> Payment submission
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setEmailError('')
+    setPasswordError('')
+    setError('')
+
     // Validate email
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setEmailError('Please enter a valid email address')
       return
     }
 
-    if (!isAvailable) return
+    // Validate password
+    if (!password || password.length < 8) {
+      setPasswordError('Password must be at least 8 characters')
+      return
+    }
+
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+      setPasswordError('Passwords do not match')
+      return
+    }
 
     setIsSubmitting(true)
 
@@ -139,7 +168,8 @@ export default function ClaimModal({ site, isOpen, onClose }) {
           subdomain,
           email,
           phone,
-          tier: selectedTier
+          tier: selectedTier,
+          password
         })
       })
 
@@ -189,144 +219,268 @@ export default function ClaimModal({ site, isOpen, onClose }) {
             background: 'white',
             padding: '16px',
             borderBottom: '1px solid #e5e7eb',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
             zIndex: 10,
           } : { position: 'relative' })
         }}>
-          <h2 style={{...styles.title, ...(isMobile ? { margin: 0, textAlign: 'left' } : {})}}>Choose Your Plan</h2>
           <button onClick={onClose} style={styles.closeX}>&times;</button>
+
+          {/* Step Indicator */}
+          <div style={styles.stepIndicator}>
+            <div style={styles.stepItem}>
+              <div style={{
+                ...styles.stepDot,
+                ...(step >= 1 ? styles.stepDotActive : {})
+              }}>1</div>
+              <span style={{
+                ...styles.stepLabel,
+                ...(step >= 1 ? styles.stepLabelActive : {})
+              }}>Plan</span>
+            </div>
+            <div style={styles.stepLine} />
+            <div style={styles.stepItem}>
+              <div style={{
+                ...styles.stepDot,
+                ...(step >= 2 ? styles.stepDotActive : {})
+              }}>2</div>
+              <span style={{
+                ...styles.stepLabel,
+                ...(step >= 2 ? styles.stepLabelActive : {})
+              }}>Account</span>
+            </div>
+            <div style={styles.stepLine} />
+            <div style={styles.stepItem}>
+              <div style={styles.stepDot}>3</div>
+              <span style={styles.stepLabel}>Payment</span>
+            </div>
+          </div>
         </div>
 
         <div style={isMobile ? { padding: '16px', paddingBottom: '100px', overflowY: 'auto' } : {}}>
-          <p style={styles.subtitle}>
-            Your site: <strong>{subdomain || 'yoursite'}.speakyour.site</strong>
-          </p>
 
-          {/* Tier Selector */}
-          <div style={styles.tierGrid}>
-            {TIERS.map((tier) => (
-              <button
-                key={tier.id}
-                onClick={() => setSelectedTier(tier.id)}
-                style={{
-                  ...styles.tierCard,
-                  ...(selectedTier === tier.id ? styles.tierCardSelected : {})
-                }}
-              >
-              {tier.popular && <span style={styles.popularBadge}>Most Popular</span>}
-              <div style={styles.tierName}>{tier.name}</div>
-              <div style={styles.tierPrice}>
-                <span style={styles.priceAmount}>{tier.price}</span>
-                <span style={styles.pricePeriod}>{tier.period}</span>
-              </div>
-              <ul style={styles.tierFeatures}>
-                {tier.features.map((feature, i) => (
-                  <li key={i} style={styles.tierFeature}>
-                    <span style={styles.checkIcon}>&#10003;</span>
-                    {feature}
-                  </li>
+          {/* STEP 1: Plan Selection */}
+          {step === 1 && (
+            <>
+              <h2 style={styles.title}>Choose Your Plan</h2>
+              <p style={styles.subtitle}>
+                Your site: <strong>{subdomain || 'yoursite'}.speakyour.site</strong>
+              </p>
+
+              {/* Tier Selector */}
+              <div style={styles.tierGrid}>
+                {TIERS.map((tier) => (
+                  <button
+                    key={tier.id}
+                    type="button"
+                    onClick={() => setSelectedTier(tier.id)}
+                    style={{
+                      ...styles.tierCard,
+                      ...(selectedTier === tier.id ? styles.tierCardSelected : {})
+                    }}
+                  >
+                    {tier.popular && <span style={styles.popularBadge}>Most Popular</span>}
+                    <div style={styles.tierName}>{tier.name}</div>
+                    <div style={styles.tierPrice}>
+                      <span style={styles.priceAmount}>{tier.price}</span>
+                      <span style={styles.pricePeriod}>{tier.period}</span>
+                    </div>
+                    <ul style={styles.tierFeatures}>
+                      {tier.features.map((feature, i) => (
+                        <li key={i} style={styles.tierFeature}>
+                          <span style={styles.checkIcon}>&#10003;</span>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </button>
                 ))}
-              </ul>
-            </button>
-          ))}
-        </div>
+              </div>
 
-        <form id="claim-form" onSubmit={handleSubmit}>
-          {/* Subdomain Input */}
-          <div style={styles.field}>
-            <label style={styles.label}>Your Subdomain</label>
-            <div style={{
-              ...styles.subdomainFieldWrapper,
-              borderColor: isAvailable === true ? '#22c55e' : isAvailable === false ? '#ef4444' : '#e0e0e0'
-            }}>
-              <input
-                type="text"
-                value={subdomain}
-                onChange={handleSubdomainChange}
-                style={styles.subdomainInput}
-                placeholder="mybusiness"
-                maxLength={63}
-              />
-              <span style={styles.suffix}>.speakyour.site</span>
-            </div>
-            <div style={styles.availabilityRow}>
-              {isChecking && <span style={styles.checking}>Checking...</span>}
-              {!isChecking && isAvailable === true && (
-                <span style={styles.available}>&#10003; Available!</span>
+              {/* Subdomain Input */}
+              <div style={styles.field}>
+                <label style={styles.label}>Your Subdomain</label>
+                <div style={{
+                  ...styles.subdomainFieldWrapper,
+                  borderColor: isAvailable === true ? '#22c55e' : isAvailable === false ? '#ef4444' : '#e0e0e0'
+                }}>
+                  <input
+                    type="text"
+                    value={subdomain}
+                    onChange={handleSubdomainChange}
+                    style={styles.subdomainInput}
+                    placeholder="mybusiness"
+                    maxLength={63}
+                  />
+                  <span style={styles.suffix}>.speakyour.site</span>
+                </div>
+                <div style={styles.availabilityRow}>
+                  {isChecking && <span style={styles.checking}>Checking...</span>}
+                  {!isChecking && isAvailable === true && (
+                    <span style={styles.available}>&#10003; Available!</span>
+                  )}
+                  {!isChecking && isAvailable === false && (
+                    <span style={styles.unavailable}>&#10007; {availabilityError || 'Not available'}</span>
+                  )}
+                </div>
+              </div>
+
+              {error && <p style={styles.error}>{error}</p>}
+
+              {/* Continue Button (non-mobile) */}
+              {!isMobile && (
+                <button
+                  type="button"
+                  onClick={handleContinue}
+                  style={styles.submitButton}
+                >
+                  Continue
+                </button>
               )}
-              {!isChecking && isAvailable === false && (
-                <span style={styles.unavailable}>&#10007; {availabilityError || 'Not available'}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Email Input */}
-          <div style={styles.field}>
-            <label style={styles.label}>Email Address *</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                setEmailError('')
-              }}
-              style={{
-                ...styles.input,
-                ...(emailError ? { borderColor: '#ef4444' } : {})
-              }}
-              placeholder="you@example.com"
-            />
-            {emailError && <p style={styles.fieldError}>{emailError}</p>}
-          </div>
-
-          {/* Phone Input */}
-          <div style={styles.field}>
-            <label style={styles.label}>Phone (optional)</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              style={styles.input}
-              placeholder="(555) 123-4567"
-            />
-          </div>
-
-          {error && <p style={styles.error}>{error}</p>}
-
-          {/* Submit Button (non-mobile) */}
-          {!isMobile && (
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              style={{
-                ...styles.submitButton,
-                opacity: isSubmitting ? 0.6 : 1,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {isSubmitting ? 'Redirecting to Checkout...' : 'Continue to Payment'}
-            </button>
+            </>
           )}
-        </form>
+
+          {/* STEP 2: Account Creation */}
+          {step === 2 && (
+            <form id="claim-form" onSubmit={handleSubmit}>
+              <h2 style={styles.title}>Create Your Account</h2>
+              <p style={styles.subtitle}>
+                Set up your account to manage your site
+              </p>
+
+              {/* Email Input */}
+              <div style={styles.field}>
+                <label style={styles.label}>Email Address *</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setEmailError('')
+                  }}
+                  style={{
+                    ...styles.input,
+                    ...(emailError ? { borderColor: '#ef4444' } : {})
+                  }}
+                  placeholder="you@example.com"
+                />
+                {emailError && <p style={styles.fieldError}>{emailError}</p>}
+              </div>
+
+              {/* Password Input */}
+              <div style={styles.field}>
+                <label style={styles.label}>Password *</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setPasswordError('')
+                  }}
+                  style={{
+                    ...styles.input,
+                    ...(passwordError ? { borderColor: '#ef4444' } : {})
+                  }}
+                  placeholder="At least 8 characters"
+                />
+              </div>
+
+              {/* Confirm Password Input */}
+              <div style={styles.field}>
+                <label style={styles.label}>Confirm Password *</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value)
+                    setPasswordError('')
+                  }}
+                  style={{
+                    ...styles.input,
+                    ...(passwordError ? { borderColor: '#ef4444' } : {})
+                  }}
+                  placeholder="Re-enter your password"
+                />
+                {passwordError && <p style={styles.fieldError}>{passwordError}</p>}
+              </div>
+
+              {/* Phone Input (optional, last) */}
+              <div style={styles.field}>
+                <label style={styles.label}>Phone (optional)</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  style={styles.input}
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+
+              {error && <p style={styles.error}>{error}</p>}
+
+              {/* Buttons (non-mobile) */}
+              {!isMobile && (
+                <div style={styles.buttonRow}>
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    style={styles.backButton}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    style={{
+                      ...styles.submitButton,
+                      flex: 1,
+                      opacity: isSubmitting ? 0.6 : 1,
+                      cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {isSubmitting ? 'Redirecting to Checkout...' : 'Continue to Payment'}
+                  </button>
+                </div>
+              )}
+            </form>
+          )}
         </div>
 
         {/* Sticky CTA Footer (mobile) */}
-        {isMobile && (
+        {isMobile && step === 1 && (
           <div style={styles.stickyFooter}>
             <button
-              type="submit"
-              form="claim-form"
-              disabled={isSubmitting}
-              style={{
-                ...styles.submitButton,
-                opacity: isSubmitting ? 0.6 : 1,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer'
-              }}
+              type="button"
+              onClick={handleContinue}
+              style={styles.submitButton}
             >
-              {isSubmitting ? 'Redirecting to Checkout...' : 'Continue to Payment'}
+              Continue
             </button>
+          </div>
+        )}
+
+        {isMobile && step === 2 && (
+          <div style={styles.stickyFooter}>
+            <div style={styles.buttonRow}>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                style={styles.backButton}
+              >
+                ← Back
+              </button>
+              <button
+                type="submit"
+                form="claim-form"
+                disabled={isSubmitting}
+                style={{
+                  ...styles.submitButton,
+                  flex: 1,
+                  opacity: isSubmitting ? 0.6 : 1,
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isSubmitting ? 'Redirecting...' : 'Continue to Payment'}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -556,5 +710,63 @@ const styles = {
     padding: '16px',
     borderTop: '1px solid #e5e7eb',
     paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+  },
+  stepIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    marginBottom: '8px',
+  },
+  stepItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  stepDot: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    background: '#e5e7eb',
+    color: '#9ca3af',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: '600',
+  },
+  stepDotActive: {
+    background: '#2563eb',
+    color: 'white',
+  },
+  stepLabel: {
+    fontSize: '11px',
+    color: '#9ca3af',
+    fontWeight: '500',
+  },
+  stepLabelActive: {
+    color: '#2563eb',
+  },
+  stepLine: {
+    width: '40px',
+    height: '2px',
+    background: '#e5e7eb',
+    marginBottom: '18px',
+  },
+  buttonRow: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: '16px 24px',
+    background: 'transparent',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    color: '#6b7280',
   }
 }
