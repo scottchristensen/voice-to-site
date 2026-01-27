@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 const translations = {
   en: {
     nav: {
-      logo: 'Speak to Site',
+      logo: 'SpeakYour.Site',
       howItWorks: 'How It Works',
       pricing: 'Pricing',
       login: 'Log In'
@@ -87,11 +87,11 @@ const translations = {
         features: ['Everything in Pro', '3 designer edits/month', 'Human-reviewed changes']
       }
     },
-    footer: 'Built with Speak to Site'
+    footer: 'Built with SpeakYour.Site'
   },
   es: {
     nav: {
-      logo: 'Habla a Sitio',
+      logo: 'SpeakYour.Site',
       howItWorks: 'Cómo Funciona',
       pricing: 'Precios',
       login: 'Iniciar Sesión'
@@ -173,7 +173,7 @@ const translations = {
         features: ['Todo lo de Pro', '3 ediciones de diseñador/mes', 'Cambios revisados por humanos']
       }
     },
-    footer: 'Hecho con Habla a Sitio'
+    footer: 'Hecho con SpeakYour.Site'
   }
 }
 
@@ -478,6 +478,7 @@ export default function Home() {
             className="cta-btn"
             style={{
               ...styles.ctaButton,
+              ...(isMobile && styles.ctaButtonMobile),
               ...(isCallActive ? styles.ctaButtonActive : {}),
               ...(callStatus === 'connecting' ? styles.ctaButtonDisabled : {})
             }}
@@ -1039,6 +1040,10 @@ const styles = {
   ctaButtonDisabled: {
     opacity: 0.7,
     cursor: 'not-allowed',
+  },
+  ctaButtonMobile: {
+    width: '100%',
+    textAlign: 'center',
   },
   callIndicator: {
     display: 'flex',
