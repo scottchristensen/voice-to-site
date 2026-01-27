@@ -1186,8 +1186,8 @@ const styles = {
   },
   microphoneContainer: {
     position: 'absolute',
-    top: '-20px',
-    right: '-30px',
+    top: '-25px',
+    left: '-35px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1212,7 +1212,7 @@ const styles = {
   },
   browserMockup: {
     width: '100%',
-    maxWidth: '440px',
+    maxWidth: '340px',
     aspectRatio: '16 / 10',
     background: 'white',
     borderRadius: '12px',
