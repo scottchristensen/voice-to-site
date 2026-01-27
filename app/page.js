@@ -527,7 +527,7 @@ export default function Home() {
             </div>
           )}
 
-          <p style={styles.heroCta}>
+          <p style={{...styles.heroCta, ...(isMobile && styles.heroCtaMobile)}}>
             {t.hero.freeCta}
           </p>
 
@@ -956,7 +956,6 @@ const styles = {
     color: '#667eea',
     textDecoration: 'none',
     fontWeight: '500',
-    fontSize: '14px',
   },
   loginLinkDark: {
     color: '#a5b4fc',
@@ -1055,6 +1054,8 @@ const styles = {
     marginTop: '16px',
     color: '#888',
     fontSize: '14px',
+  },
+  heroCtaMobile: {
     textAlign: 'center',
   },
   testButton: {
