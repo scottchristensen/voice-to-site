@@ -2,13 +2,56 @@
 
 import { useState, useRef, useEffect } from 'react'
 
+// Translations
+const translations = {
+  en: {
+    editsRemaining: (n) => `${n} edit${n !== 1 ? 's' : ''} remaining`,
+    whatToChange: 'What would you like to change?',
+    changePhone: 'Change phone number',
+    updateHeadline: 'Update headline',
+    changeColors: 'Change colors',
+    describeEdit: 'Describe your edit...',
+    done: 'Done! Your change has been applied.',
+    limitReached: "You've used all 5 free edits. Claim your site to continue editing!",
+    error: 'Something went wrong. Please try again.',
+    networkError: 'Network error. Please try again.',
+    loadingStatuses: [
+      'Analyzing your request...',
+      'Updating your site...',
+      'Applying changes...',
+      'Almost there...',
+      'Polishing details...',
+    ],
+  },
+  es: {
+    editsRemaining: (n) => `${n} edición${n !== 1 ? 'es' : ''} restante${n !== 1 ? 's' : ''}`,
+    whatToChange: '¿Qué te gustaría cambiar?',
+    changePhone: 'Cambiar teléfono',
+    updateHeadline: 'Actualizar título',
+    changeColors: 'Cambiar colores',
+    describeEdit: 'Describe tu edición...',
+    done: '¡Listo! Tu cambio ha sido aplicado.',
+    limitReached: 'Has usado las 5 ediciones gratuitas. ¡Reclama tu sitio para continuar editando!',
+    error: 'Algo salió mal. Por favor intenta de nuevo.',
+    networkError: 'Error de red. Por favor intenta de nuevo.',
+    loadingStatuses: [
+      'Analizando tu solicitud...',
+      'Actualizando tu sitio...',
+      'Aplicando cambios...',
+      'Casi listo...',
+      'Puliendo detalles...',
+    ],
+  }
+}
+
 export default function EditSheet({
   isOpen,
   onClose,
   siteId,
   editsRemaining,
   onEditComplete,
-  onLimitReached
+  onLimitReached,
+  language = 'en'
 }) {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
@@ -21,13 +64,7 @@ export default function EditSheet({
   const sheetRef = useRef(null)
   const dragStartY = useRef(null)
 
-  const loadingStatuses = [
-    'Analyzing your request...',
-    'Updating your site...',
-    'Applying changes...',
-    'Almost there...',
-    'Polishing details...',
-  ]
+  const t = translations[language] || translations.en
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -48,10 +85,10 @@ export default function EditSheet({
       return
     }
     const interval = setInterval(() => {
-      setLoadingStatusIndex(prev => (prev + 1) % loadingStatuses.length)
+      setLoadingStatusIndex(prev => (prev + 1) % t.loadingStatuses.length)
     }, 2500)
     return () => clearInterval(interval)
-  }, [isLoading])
+  }, [isLoading, t.loadingStatuses.length])
 
   const handleDragStart = (e) => {
     dragStartY.current = e.touches ? e.touches[0].clientY : e.clientY
@@ -102,28 +139,28 @@ export default function EditSheet({
       if (result.success) {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: 'Done! Your change has been applied.',
+          content: t.done,
           success: true
         }])
         onEditComplete(result.html, result.editsRemaining)
       } else if (result.error === 'limit_reached') {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: "You've used all 5 free edits. Claim your site to continue editing!",
+          content: t.limitReached,
           error: true
         }])
         onLimitReached()
       } else {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: result.error || 'Something went wrong. Please try again.',
+          content: result.error || t.error,
           error: true
         }])
       }
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Network error. Please try again.',
+        content: t.networkError,
         error: true
       }])
     } finally {
@@ -169,7 +206,7 @@ export default function EditSheet({
         <div style={styles.header}>
           <div style={styles.headerLeft}>
             <span style={styles.editsSubtitle}>
-              {editsRemaining} edit{editsRemaining !== 1 ? 's' : ''} remaining
+              {t.editsRemaining(editsRemaining)}
             </span>
           </div>
           <button onClick={onClose} style={styles.minimizeButton}>
@@ -183,25 +220,25 @@ export default function EditSheet({
         <div style={styles.messages}>
           {messages.length === 0 && (
             <div style={styles.emptyState}>
-              <p style={styles.emptyTitle}>What would you like to change?</p>
+              <p style={styles.emptyTitle}>{t.whatToChange}</p>
               <div style={styles.exampleChips}>
                 <button
                   style={styles.chip}
-                  onClick={() => setInputValue('Change the phone number')}
+                  onClick={() => setInputValue(language === 'es' ? 'Cambiar el teléfono' : 'Change the phone number')}
                 >
-                  Change phone number
+                  {t.changePhone}
                 </button>
                 <button
                   style={styles.chip}
-                  onClick={() => setInputValue('Update the headline')}
+                  onClick={() => setInputValue(language === 'es' ? 'Actualizar el título' : 'Update the headline')}
                 >
-                  Update headline
+                  {t.updateHeadline}
                 </button>
                 <button
                   style={styles.chip}
-                  onClick={() => setInputValue('Change the colors')}
+                  onClick={() => setInputValue(language === 'es' ? 'Cambiar los colores' : 'Change the colors')}
                 >
-                  Change colors
+                  {t.changeColors}
                 </button>
               </div>
             </div>
@@ -224,7 +261,7 @@ export default function EditSheet({
           ))}
           {isLoading && (
             <div style={{ ...styles.message, ...styles.assistantMessage }}>
-              {loadingStatuses[loadingStatusIndex]}
+              {t.loadingStatuses[loadingStatusIndex]}
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -237,7 +274,7 @@ export default function EditSheet({
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Describe your edit..."
+            placeholder={t.describeEdit}
             style={styles.input}
             disabled={isLoading}
           />

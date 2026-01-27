@@ -21,7 +21,7 @@ const translations = {
     claimBeforeGone: 'Or claim this exact design before it\'s gone forever',
   },
   es: {
-    sitePreview: 'Vista previa de tu sitio',
+    sitePreview: 'Tu sitio',
     leftToClaim: 'para reclamar',
     expiringSoon: '¡Expira pronto!',
     claimMySite: 'Reclamar Mi Sitio',
@@ -276,6 +276,7 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
             editsRemaining={editsRemaining}
             onEditComplete={handleEditComplete}
             onLimitReached={handleLimitReached}
+            language={language}
           />
         )}
 
@@ -316,6 +317,7 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
           editsRemaining={editsRemaining}
           onEditComplete={handleEditComplete}
           onLimitReached={handleLimitReached}
+          language={language}
         />
       )}
 

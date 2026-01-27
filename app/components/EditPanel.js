@@ -2,13 +2,60 @@
 
 import { useState, useRef, useEffect } from 'react'
 
+// Translations
+const translations = {
+  en: {
+    editYourSite: 'Edit Your Site',
+    editsRemaining: (n) => `${n} edit${n !== 1 ? 's' : ''} remaining`,
+    whatToChange: 'What would you like to change?',
+    tryThingsLike: 'Try things like:',
+    example1: '"Change the phone number to 555-1234"',
+    example2: '"Make the header blue instead of purple"',
+    example3: '"Update the business hours"',
+    describeEdit: 'Describe your edit...',
+    done: 'Done! Your change has been applied.',
+    limitReached: "You've used all 5 free edits. Claim your site to continue editing!",
+    error: 'Something went wrong. Please try again.',
+    networkError: 'Network error. Please try again.',
+    loadingStatuses: [
+      'Analyzing your request...',
+      'Updating your site...',
+      'Applying changes...',
+      'Almost there...',
+      'Polishing details...',
+    ],
+  },
+  es: {
+    editYourSite: 'Edita Tu Sitio',
+    editsRemaining: (n) => `${n} edición${n !== 1 ? 'es' : ''} restante${n !== 1 ? 's' : ''}`,
+    whatToChange: '¿Qué te gustaría cambiar?',
+    tryThingsLike: 'Prueba cosas como:',
+    example1: '"Cambiar el número de teléfono a 555-1234"',
+    example2: '"Hacer el encabezado azul en lugar de morado"',
+    example3: '"Actualizar el horario de atención"',
+    describeEdit: 'Describe tu edición...',
+    done: '¡Listo! Tu cambio ha sido aplicado.',
+    limitReached: 'Has usado las 5 ediciones gratuitas. ¡Reclama tu sitio para continuar editando!',
+    error: 'Algo salió mal. Por favor intenta de nuevo.',
+    networkError: 'Error de red. Por favor intenta de nuevo.',
+    loadingStatuses: [
+      'Analizando tu solicitud...',
+      'Actualizando tu sitio...',
+      'Aplicando cambios...',
+      'Casi listo...',
+      'Puliendo detalles...',
+    ],
+  }
+}
+
 export default function EditPanel({
   isOpen,
   onClose,
   siteId,
   editsRemaining,
   onEditComplete,
-  onLimitReached
+  onLimitReached,
+  language = 'en'
 }) {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
@@ -17,13 +64,7 @@ export default function EditPanel({
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
-  const loadingStatuses = [
-    'Analyzing your request...',
-    'Updating your site...',
-    'Applying changes...',
-    'Almost there...',
-    'Polishing details...',
-  ]
+  const t = translations[language] || translations.en
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -44,10 +85,10 @@ export default function EditPanel({
       return
     }
     const interval = setInterval(() => {
-      setLoadingStatusIndex(prev => (prev + 1) % loadingStatuses.length)
+      setLoadingStatusIndex(prev => (prev + 1) % t.loadingStatuses.length)
     }, 2500)
     return () => clearInterval(interval)
-  }, [isLoading])
+  }, [isLoading, t.loadingStatuses.length])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -79,28 +120,28 @@ export default function EditPanel({
       if (result.success) {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: 'Done! Your change has been applied.',
+          content: t.done,
           success: true
         }])
         onEditComplete(result.html, result.editsRemaining)
       } else if (result.error === 'limit_reached') {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: "You've used all 5 free edits. Claim your site to continue editing!",
+          content: t.limitReached,
           error: true
         }])
         onLimitReached()
       } else {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: result.error || 'Something went wrong. Please try again.',
+          content: result.error || t.error,
           error: true
         }])
       }
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Network error. Please try again.',
+        content: t.networkError,
         error: true
       }])
     } finally {
@@ -116,9 +157,9 @@ export default function EditPanel({
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
-          <h3 style={styles.title}>Edit Your Site</h3>
+          <h3 style={styles.title}>{t.editYourSite}</h3>
           <span style={styles.editsBadge}>
-            {editsRemaining} edit{editsRemaining !== 1 ? 's' : ''} remaining
+            {t.editsRemaining(editsRemaining)}
           </span>
         </div>
         <button onClick={onClose} style={styles.closeButton}>
@@ -132,14 +173,14 @@ export default function EditPanel({
       <div style={styles.messages}>
         {messages.length === 0 && (
           <div style={styles.emptyState}>
-            <p style={styles.emptyTitle}>What would you like to change?</p>
+            <p style={styles.emptyTitle}>{t.whatToChange}</p>
             <p style={styles.emptyText}>
-              Try things like:
+              {t.tryThingsLike}
             </p>
             <ul style={styles.exampleList}>
-              <li>"Change the phone number to 555-1234"</li>
-              <li>"Make the header blue instead of purple"</li>
-              <li>"Update the business hours"</li>
+              <li>{t.example1}</li>
+              <li>{t.example2}</li>
+              <li>{t.example3}</li>
             </ul>
           </div>
         )}
@@ -161,7 +202,7 @@ export default function EditPanel({
         ))}
         {isLoading && (
           <div style={{ ...styles.message, ...styles.assistantMessage }}>
-            {loadingStatuses[loadingStatusIndex]}
+            {t.loadingStatuses[loadingStatusIndex]}
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -174,7 +215,7 @@ export default function EditPanel({
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Describe your edit..."
+          placeholder={t.describeEdit}
           style={styles.input}
           disabled={isLoading}
         />
