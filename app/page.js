@@ -185,6 +185,7 @@ export default function Home() {
   const [showModal, setShowModal] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [language, setLanguage] = useState('en') // 'en' or 'es'
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     // Detect OS dark mode preference
@@ -196,6 +197,27 @@ export default function Home() {
     darkModeMediaQuery.addEventListener('change', handleChange)
 
     return () => darkModeMediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  // Load language from localStorage on mount
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('preferredLanguage')
+    if (savedLanguage === 'en' || savedLanguage === 'es') {
+      setLanguage(savedLanguage)
+    }
+  }, [])
+
+  // Persist language choice to localStorage
+  useEffect(() => {
+    localStorage.setItem('preferredLanguage', language)
+  }, [language])
+
+  // Detect mobile for language toggle UI
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   useEffect(() => {
@@ -281,7 +303,13 @@ export default function Home() {
     setPreviewUrl(null)
     setShowModal(false)
     try {
-      await vapi.start(process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID)
+      // Route to Spanish or English VAPI assistant based on language
+      const assistantId = language === 'es'
+        ? process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID_ES
+        : process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID
+
+      // Fall back to default if Spanish assistant ID not configured
+      await vapi.start(assistantId || process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID)
     } catch (error) {
       console.error('Failed to start call:', error)
       setCallStatus('idle')
@@ -379,13 +407,48 @@ export default function Home() {
         <div style={styles.navLinks}>
           <a href="#how-it-works" className="home-nav-link" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.howItWorks}</a>
           <a href="#pricing" className="home-nav-link" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.pricing}</a>
-          <button
-            onClick={() => setLanguage(language === 'en' ? 'es' : 'en')}
-            className="lang-toggle"
-            style={{...styles.langToggle, ...(isDarkMode && styles.langToggleDark)}}
-          >
-            {language === 'en' ? '🇪🇸 ES' : '🇺🇸 EN'}
-          </button>
+          {/* Language Toggle - Sliding for desktop, dropdown for mobile */}
+          {isMobile ? (
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="lang-dropdown"
+              style={{...styles.langDropdown, ...(isDarkMode && styles.langDropdownDark)}}
+            >
+              <option value="en">🇺🇸 English</option>
+              <option value="es">🇪🇸 Español</option>
+            </select>
+          ) : (
+            <div style={{...styles.langToggleContainer, ...(isDarkMode && styles.langToggleContainerDark)}}>
+              <button
+                onClick={() => setLanguage('en')}
+                style={{
+                  ...styles.langToggleBtn,
+                  ...(language === 'en' ? styles.langToggleBtnActive : {}),
+                  ...(isDarkMode && (language === 'en' ? styles.langToggleBtnActiveDark : styles.langToggleBtnDark))
+                }}
+              >
+                🇺🇸 EN
+              </button>
+              <button
+                onClick={() => setLanguage('es')}
+                style={{
+                  ...styles.langToggleBtn,
+                  ...(language === 'es' ? styles.langToggleBtnActive : {}),
+                  ...(isDarkMode && (language === 'es' ? styles.langToggleBtnActiveDark : styles.langToggleBtnDark))
+                }}
+              >
+                🇪🇸 ES
+              </button>
+              <div
+                style={{
+                  ...styles.langToggleSlider,
+                  ...(isDarkMode && styles.langToggleSliderDark),
+                  transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'
+                }}
+              />
+            </div>
+          )}
           <a href="/login" className="login-btn" style={styles.loginButton}>
             {t.nav.login}
           </a>
@@ -804,16 +867,67 @@ const styles = {
     textDecoration: 'none',
     fontWeight: '500',
   },
-  langToggle: {
+  // Desktop: Sliding toggle
+  langToggleContainer: {
+    display: 'flex',
+    position: 'relative',
+    background: '#f3f4f6',
+    borderRadius: '8px',
+    padding: '3px',
+  },
+  langToggleBtn: {
+    position: 'relative',
+    zIndex: 1,
     background: 'transparent',
+    border: 'none',
+    padding: '6px 12px',
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    color: '#666',
+    transition: 'color 0.2s',
+    borderRadius: '6px',
+  },
+  langToggleBtnActive: {
+    color: '#1a1a2e',
+  },
+  langToggleBtnDark: {
+    color: '#aaa',
+  },
+  langToggleSlider: {
+    position: 'absolute',
+    top: '3px',
+    left: '3px',
+    width: 'calc(50% - 3px)',
+    height: 'calc(100% - 6px)',
+    background: 'white',
+    borderRadius: '6px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    transition: 'transform 0.2s ease',
+    pointerEvents: 'none',
+  },
+  langToggleSliderDark: {
+    background: '#444',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+  },
+  langToggleBtnActiveDark: {
+    color: '#fff',
+  },
+  // Mobile: Dropdown
+  langDropdown: {
+    background: 'white',
     color: '#555',
     border: '1px solid #ddd',
-    padding: '8px 16px',
+    padding: '8px 12px',
     borderRadius: '6px',
     fontWeight: '500',
     fontSize: '14px',
     cursor: 'pointer',
-    transition: 'all 0.2s',
+  },
+  langDropdownDark: {
+    background: '#2a2a3e',
+    color: '#ddd',
+    borderColor: '#444',
   },
   loginButton: {
     display: 'inline-flex',
@@ -1174,10 +1288,8 @@ const styles = {
   navLinkDark: {
     color: '#b0b0b0',
   },
-  langToggleDark: {
-    background: 'transparent',
-    color: '#b0b0b0',
-    border: '1px solid #444',
+  langToggleContainerDark: {
+    background: '#2a2a3e',
   },
   heroDark: {
     background: '#0a0a0a',

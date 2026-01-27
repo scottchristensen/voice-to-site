@@ -2,6 +2,76 @@
 
 import { useState, useRef, useEffect } from 'react'
 
+// UI Translations
+const translations = {
+  en: {
+    dashboard: 'Dashboard',
+    editing: 'Editing',
+    viewLive: 'View Live',
+    editYourSite: 'Edit Your Site',
+    text: 'Text',
+    voice: 'Voice',
+    whatToChange: 'What would you like to change?',
+    tryThings: 'Try things like:',
+    example1: '"Change the phone number to 555-1234"',
+    example2: '"Make the header blue instead of purple"',
+    example3: '"Update the business hours"',
+    changePhone: 'Change phone number',
+    updateHeadline: 'Update headline',
+    changeColors: 'Change colors',
+    describeEdit: 'Describe your edit...',
+    doneApplied: 'Done! Your change has been applied.',
+    somethingWrong: 'Something went wrong. Please try again.',
+    networkError: 'Network error. Please try again.',
+    editWithVoice: 'Edit with Voice',
+    voiceDescription: 'Start a conversation with our AI assistant to make changes to your website using your voice.',
+    startVoiceSession: 'Start Voice Session',
+    connecting: 'Connecting...',
+    connectingWait: 'Please wait while we connect you to the AI assistant.',
+    listening: 'Listening...',
+    listenDescribe: 'Describe the changes you want to make to your website. Say "I\'m done" when finished.',
+    endSession: 'End Session',
+    viewLiveSite: 'View Live Site',
+    minimize: 'Minimize',
+    tapToStart: 'Tap to start a voice editing session',
+    listeningDescribe: 'Listening... describe your changes',
+    edit: 'Edit',
+  },
+  es: {
+    dashboard: 'Panel',
+    editing: 'Editando',
+    viewLive: 'Ver en Vivo',
+    editYourSite: 'Edita Tu Sitio',
+    text: 'Texto',
+    voice: 'Voz',
+    whatToChange: '¿Qué te gustaría cambiar?',
+    tryThings: 'Prueba cosas como:',
+    example1: '"Cambiar el número de teléfono a 555-1234"',
+    example2: '"Hacer el encabezado azul en lugar de morado"',
+    example3: '"Actualizar el horario de atención"',
+    changePhone: 'Cambiar teléfono',
+    updateHeadline: 'Actualizar título',
+    changeColors: 'Cambiar colores',
+    describeEdit: 'Describe tu edición...',
+    doneApplied: '¡Listo! Tu cambio ha sido aplicado.',
+    somethingWrong: 'Algo salió mal. Por favor intenta de nuevo.',
+    networkError: 'Error de red. Por favor intenta de nuevo.',
+    editWithVoice: 'Editar con Voz',
+    voiceDescription: 'Inicia una conversación con nuestro asistente de IA para hacer cambios a tu sitio web usando tu voz.',
+    startVoiceSession: 'Iniciar Sesión de Voz',
+    connecting: 'Conectando...',
+    connectingWait: 'Por favor espera mientras te conectamos con el asistente de IA.',
+    listening: 'Escuchando...',
+    listenDescribe: 'Describe los cambios que quieres hacer a tu sitio web. Di "Terminé" cuando hayas acabado.',
+    endSession: 'Terminar Sesión',
+    viewLiveSite: 'Ver Sitio en Vivo',
+    minimize: 'Minimizar',
+    tapToStart: 'Toca para iniciar una sesión de edición por voz',
+    listeningDescribe: 'Escuchando... describe tus cambios',
+    edit: 'Editar',
+  }
+}
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
 
@@ -23,10 +93,26 @@ export default function EditSiteClient({ site }) {
   const [isLoading, setIsLoading] = useState(false)
   const [editMode, setEditMode] = useState('text') // 'text' or 'voice'
   const [callStatus, setCallStatus] = useState('idle') // 'idle', 'connecting', 'active'
+  const [language, setLanguage] = useState('en')
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const vapiRef = useRef(null)
   const isMobile = useIsMobile()
+
+  // Load language preference from localStorage
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('preferredLanguage')
+    if (savedLanguage === 'en' || savedLanguage === 'es') {
+      setLanguage(savedLanguage)
+    }
+  }, [])
+
+  // Persist language choice to localStorage
+  useEffect(() => {
+    localStorage.setItem('preferredLanguage', language)
+  }, [language])
+
+  const t = translations[language] || translations.en
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -64,21 +150,21 @@ export default function EditSiteClient({ site }) {
       if (result.success) {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: 'Done! Your change has been applied.',
+          content: t.doneApplied,
           success: true
         }])
         setCurrentHtml(result.html)
       } else {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: result.error || 'Something went wrong. Please try again.',
+          content: result.error || t.somethingWrong,
           error: true
         }])
       }
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Network error. Please try again.',
+        content: t.networkError,
         error: true
       }])
     } finally {
@@ -119,7 +205,12 @@ export default function EditSiteClient({ site }) {
         })
       }
 
-      await vapiRef.current.start(process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID, {
+      // Route to Spanish or English VAPI assistant based on language
+      const assistantId = language === 'es'
+        ? process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID_ES
+        : process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID
+
+      await vapiRef.current.start(assistantId || process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID, {
         variableValues: {
           mode: 'edit',
           siteId: site.id,
@@ -151,7 +242,7 @@ export default function EditSiteClient({ site }) {
       {/* Header */}
       <div style={styles.panelHeader}>
         <div style={styles.panelHeaderLeft}>
-          <h3 style={styles.panelTitle}>Edit Your Site</h3>
+          <h3 style={styles.panelTitle}>{t.editYourSite}</h3>
           <span style={styles.siteBadge}>{site.business_name || 'Untitled Site'}</span>
         </div>
         <button onClick={() => setIsEditPanelOpen(false)} style={styles.closeButton}>
@@ -171,7 +262,7 @@ export default function EditSiteClient({ site }) {
           }}
         >
           <ChatIcon />
-          Text
+          {t.text}
         </button>
         <button
           onClick={() => setEditMode('voice')}
@@ -181,7 +272,7 @@ export default function EditSiteClient({ site }) {
           }}
         >
           <MicIcon />
-          Voice
+          {t.voice}
         </button>
       </div>
 
@@ -191,12 +282,12 @@ export default function EditSiteClient({ site }) {
           <div style={styles.messages}>
             {messages.length === 0 && (
               <div style={styles.emptyState}>
-                <p style={styles.emptyTitle}>What would you like to change?</p>
-                <p style={styles.emptyText}>Try things like:</p>
+                <p style={styles.emptyTitle}>{t.whatToChange}</p>
+                <p style={styles.emptyText}>{t.tryThings}</p>
                 <ul style={styles.exampleList}>
-                  <li>"Change the phone number to 555-1234"</li>
-                  <li>"Make the header blue instead of purple"</li>
-                  <li>"Update the business hours"</li>
+                  <li>{t.example1}</li>
+                  <li>{t.example2}</li>
+                  <li>{t.example3}</li>
                 </ul>
               </div>
             )}
@@ -232,7 +323,7 @@ export default function EditSiteClient({ site }) {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Describe your edit..."
+              placeholder={t.describeEdit}
               style={styles.input}
               disabled={isLoading}
             />
@@ -261,13 +352,13 @@ export default function EditSiteClient({ site }) {
                 <div style={styles.voiceIcon}>
                   <MicLargeIcon />
                 </div>
-                <h4 style={styles.voiceTitle}>Edit with Voice</h4>
+                <h4 style={styles.voiceTitle}>{t.editWithVoice}</h4>
                 <p style={styles.voiceText}>
-                  Start a conversation with our AI assistant to make changes to your website using your voice.
+                  {t.voiceDescription}
                 </p>
                 <button onClick={startVoiceAgent} style={styles.startVoiceButton}>
                   <MicIcon />
-                  Start Voice Session
+                  {t.startVoiceSession}
                 </button>
               </>
             )}
@@ -276,8 +367,8 @@ export default function EditSiteClient({ site }) {
                 <div style={styles.voiceIconConnecting}>
                   <LoadingSpinner />
                 </div>
-                <h4 style={styles.voiceTitle}>Connecting...</h4>
-                <p style={styles.voiceText}>Please wait while we connect you to the AI assistant.</p>
+                <h4 style={styles.voiceTitle}>{t.connecting}</h4>
+                <p style={styles.voiceText}>{t.connectingWait}</p>
               </>
             )}
             {callStatus === 'active' && (
@@ -286,12 +377,12 @@ export default function EditSiteClient({ site }) {
                   <span style={styles.pulseRing}></span>
                   <MicLargeIcon />
                 </div>
-                <h4 style={styles.voiceTitle}>Listening...</h4>
+                <h4 style={styles.voiceTitle}>{t.listening}</h4>
                 <p style={styles.voiceText}>
-                  Describe the changes you want to make to your website. Say "I'm done" when finished.
+                  {t.listenDescribe}
                 </p>
                 <button onClick={endCall} style={styles.endCallButton}>
-                  End Session
+                  {t.endSession}
                 </button>
               </>
             )}
@@ -308,7 +399,7 @@ export default function EditSiteClient({ site }) {
           style={styles.viewLiveLink}
         >
           <ExternalLinkIcon />
-          View Live Site
+          {t.viewLiveSite}
         </a>
       </div>
 
@@ -359,9 +450,9 @@ export default function EditSiteClient({ site }) {
 
         {/* Header */}
         <div style={styles.sheetHeader}>
-          <span style={styles.sheetTitle}>Edit Your Site</span>
+          <span style={styles.sheetTitle}>{t.editYourSite}</span>
           <button onClick={() => setIsEditPanelOpen(false)} style={styles.minimizeButton}>
-            Minimize
+            {t.minimize}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '4px' }}>
               <path d="M19 14l-7 7-7-7" />
             </svg>
@@ -378,7 +469,7 @@ export default function EditSiteClient({ site }) {
             }}
           >
             <ChatIcon />
-            Text
+            {t.text}
           </button>
           <button
             onClick={() => setEditMode('voice')}
@@ -388,7 +479,7 @@ export default function EditSiteClient({ site }) {
             }}
           >
             <MicIcon />
-            Voice
+            {t.voice}
           </button>
         </div>
 
@@ -398,16 +489,16 @@ export default function EditSiteClient({ site }) {
             <div style={styles.sheetMessages}>
               {messages.length === 0 && (
                 <div style={styles.emptyState}>
-                  <p style={styles.emptyTitle}>What would you like to change?</p>
+                  <p style={styles.emptyTitle}>{t.whatToChange}</p>
                   <div style={styles.exampleChips}>
-                    <button style={styles.chip} onClick={() => setInputValue('Change the phone number')}>
-                      Change phone number
+                    <button style={styles.chip} onClick={() => setInputValue(language === 'es' ? 'Cambiar el teléfono' : 'Change the phone number')}>
+                      {t.changePhone}
                     </button>
-                    <button style={styles.chip} onClick={() => setInputValue('Update the headline')}>
-                      Update headline
+                    <button style={styles.chip} onClick={() => setInputValue(language === 'es' ? 'Actualizar el título' : 'Update the headline')}>
+                      {t.updateHeadline}
                     </button>
-                    <button style={styles.chip} onClick={() => setInputValue('Change the colors')}>
-                      Change colors
+                    <button style={styles.chip} onClick={() => setInputValue(language === 'es' ? 'Cambiar los colores' : 'Change the colors')}>
+                      {t.changeColors}
                     </button>
                   </div>
                 </div>
@@ -444,7 +535,7 @@ export default function EditSiteClient({ site }) {
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Describe your edit..."
+                placeholder={t.describeEdit}
                 style={styles.inputMobile}
                 disabled={isLoading}
               />
@@ -472,10 +563,10 @@ export default function EditSiteClient({ site }) {
                 <div style={styles.voiceIconMobile}>
                   <MicLargeIcon />
                 </div>
-                <p style={styles.voiceTextMobile}>Tap to start a voice editing session</p>
+                <p style={styles.voiceTextMobile}>{t.tapToStart}</p>
                 <button onClick={startVoiceAgent} style={styles.startVoiceButtonMobile}>
                   <MicIcon />
-                  Start Voice Session
+                  {t.startVoiceSession}
                 </button>
               </>
             )}
@@ -484,7 +575,7 @@ export default function EditSiteClient({ site }) {
                 <div style={styles.voiceIconConnecting}>
                   <LoadingSpinner />
                 </div>
-                <p style={styles.voiceTextMobile}>Connecting...</p>
+                <p style={styles.voiceTextMobile}>{t.connecting}</p>
               </>
             )}
             {callStatus === 'active' && (
@@ -493,9 +584,9 @@ export default function EditSiteClient({ site }) {
                   <span style={styles.pulseRing}></span>
                   <MicLargeIcon />
                 </div>
-                <p style={styles.voiceTextMobile}>Listening... describe your changes</p>
+                <p style={styles.voiceTextMobile}>{t.listeningDescribe}</p>
                 <button onClick={endCall} style={styles.endCallButtonMobile}>
-                  End Session
+                  {t.endSession}
                 </button>
               </>
             )}
@@ -541,22 +632,43 @@ export default function EditSiteClient({ site }) {
       <div style={styles.header}>
         <a href="/dashboard" style={styles.backLink}>
           <BackIcon />
-          Dashboard
+          {t.dashboard}
         </a>
         <div style={styles.headerCenter}>
           <span style={styles.editBadge}>
             <EditIcon />
-            Editing
+            {t.editing}
           </span>
           <span style={styles.siteNameHeader}>{site.business_name || 'Untitled Site'}</span>
         </div>
+        {/* Language Toggle */}
+        {isMobile ? (
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            style={styles.langDropdown}
+          >
+            <option value="en">🇺🇸 EN</option>
+            <option value="es">🇪🇸 ES</option>
+          </select>
+        ) : (
+          <div style={styles.langToggleContainer}>
+            <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
+              🇺🇸 EN
+            </button>
+            <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
+              🇪🇸 ES
+            </button>
+            <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
+          </div>
+        )}
         <a
           href={`https://${site.subdomain}.speakyour.site`}
           target="_blank"
           rel="noopener noreferrer"
           style={styles.viewLiveButton}
         >
-          View Live
+          {t.viewLive}
           <ExternalLinkIcon />
         </a>
       </div>
@@ -583,13 +695,13 @@ export default function EditSiteClient({ site }) {
             <button
               onClick={() => setIsEditPanelOpen(true)}
               style={styles.fab}
-              title="Edit your site"
+              title={t.edit}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
-              <span style={styles.fabLabel}>Edit</span>
+              <span style={styles.fabLabel}>{t.edit}</span>
             </button>
           )}
         </div>
@@ -1228,5 +1340,50 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+  },
+  // Language toggle styles
+  langToggleContainer: {
+    display: 'flex',
+    position: 'relative',
+    background: '#f3f4f6',
+    borderRadius: '8px',
+    padding: '3px',
+  },
+  langToggleBtn: {
+    position: 'relative',
+    zIndex: 1,
+    background: 'transparent',
+    border: 'none',
+    padding: '6px 12px',
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    color: '#666',
+    transition: 'color 0.2s',
+    borderRadius: '6px',
+  },
+  langToggleBtnActive: {
+    color: '#1a1a2e',
+  },
+  langToggleSlider: {
+    position: 'absolute',
+    top: '3px',
+    left: '3px',
+    width: 'calc(50% - 3px)',
+    height: 'calc(100% - 6px)',
+    background: 'white',
+    borderRadius: '6px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    transition: 'transform 0.2s ease',
+  },
+  langDropdown: {
+    background: 'white',
+    color: '#555',
+    border: '1px solid #ddd',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    fontWeight: '500',
+    fontSize: '14px',
+    cursor: 'pointer',
   },
 }

@@ -115,18 +115,24 @@ export async function POST(request) {
             try {
               const { data: siteData } = await supabase
                 .from('generated_sites')
-                .select('business_name')
+                .select('business_name, owner_language')
                 .eq('id', site_id)
                 .single()
+
+              const ownerLanguage = siteData?.owner_language || 'en'
+              const emailSubject = ownerLanguage === 'es'
+                ? `¡Tu sitio está en vivo! ${siteData?.business_name || ''}`.trim()
+                : `Your site is live! ${siteData?.business_name || ''}`.trim()
 
               await resend.emails.send({
                 from: 'SpeakYour.Site <notifications@speakyour.site>',
                 to: email,
-                subject: `Your site is live! ${siteData?.business_name || ''}`.trim(),
+                subject: emailSubject,
                 html: buildPaymentConfirmationEmail({
                   businessName: siteData?.business_name,
                   subdomain,
-                  email
+                  email,
+                  language: ownerLanguage
                 })
               })
               console.log(`Payment confirmation email sent to ${email}`)
@@ -205,13 +211,39 @@ export async function POST(request) {
   return Response.json({ received: true })
 }
 
-function buildPaymentConfirmationEmail({ businessName, subdomain, email }) {
+function buildPaymentConfirmationEmail({ businessName, subdomain, email, language = 'en' }) {
   const liveUrl = `https://${subdomain}.speakyour.site`
   const dashboardUrl = 'https://www.speakyour.site/dashboard'
   const createAnotherUrl = 'https://www.speakyour.site'
 
+  // Translations
+  const t = {
+    en: {
+      siteIsLive: 'Your Site is Live!',
+      congratulations: `Congratulations! Your website for <strong>${businessName || 'your business'}</strong> is now live.`,
+      visitSite: 'Visit Your Site',
+      dashboard: 'Go to Dashboard',
+      shareYourSite: 'Share your new site',
+      createAnother: 'Create Another Site',
+      footer: 'You\'re receiving this email because you claimed a site on',
+      twitterText: `Check out my new website for ${businessName}!`
+    },
+    es: {
+      siteIsLive: '¡Tu Sitio Está en Vivo!',
+      congratulations: `¡Felicidades! Tu sitio web para <strong>${businessName || 'tu negocio'}</strong> ya está en línea.`,
+      visitSite: 'Visitar Tu Sitio',
+      dashboard: 'Ir al Panel',
+      shareYourSite: 'Comparte tu nuevo sitio',
+      createAnother: 'Crear Otro Sitio',
+      footer: 'Recibes este correo porque reclamaste un sitio en',
+      twitterText: `¡Mira mi nuevo sitio web para ${businessName}!`
+    }
+  }
+
+  const text = t[language] || t.en
+
   // Social share URLs
-  const twitterShare = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my new website for ${businessName}!`)}&url=${encodeURIComponent(liveUrl)}`
+  const twitterShare = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text.twitterText)}&url=${encodeURIComponent(liveUrl)}`
   const facebookShare = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(liveUrl)}`
   const linkedinShare = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(liveUrl)}`
 
@@ -227,13 +259,13 @@ function buildPaymentConfirmationEmail({ businessName, subdomain, email }) {
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 24px; text-align: center;">
           <div style="font-size: 64px; margin-bottom: 16px;">&#127881;</div>
-          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Your Site is Live!</h1>
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">${text.siteIsLive}</h1>
         </div>
 
         <!-- Content -->
         <div style="padding: 32px 24px;">
           <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0; text-align: center;">
-            Congratulations! Your website for <strong>${businessName || 'your business'}</strong> is now live.
+            ${text.congratulations}
           </p>
 
           <!-- Live URL Box -->
@@ -244,16 +276,16 @@ function buildPaymentConfirmationEmail({ businessName, subdomain, email }) {
           <!-- Primary CTAs -->
           <div style="text-align: center; margin-bottom: 24px;">
             <a href="${liveUrl}" style="display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 0 8px 12px 8px;">
-              Visit Your Site
+              ${text.visitSite}
             </a>
             <a href="${dashboardUrl}" style="display: inline-block; padding: 14px 28px; background: transparent; border: 2px solid #667eea; color: #667eea; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 0 8px 12px 8px;">
-              Go to Dashboard
+              ${text.dashboard}
             </a>
           </div>
 
           <!-- Share Section -->
           <div style="border-top: 1px solid #e5e7eb; padding-top: 24px; margin-bottom: 24px;">
-            <p style="color: #666; font-size: 14px; margin: 0 0 16px 0; text-align: center;">Share your new site</p>
+            <p style="color: #666; font-size: 14px; margin: 0 0 16px 0; text-align: center;">${text.shareYourSite}</p>
             <div style="text-align: center;">
               <a href="${twitterShare}" style="display: inline-block; width: 44px; height: 44px; line-height: 44px; background: #f0f4f8; border-radius: 50%; color: #667eea; text-decoration: none; margin: 0 6px;" title="Share on X">
                 <span style="font-size: 18px;">𝕏</span>
@@ -270,7 +302,7 @@ function buildPaymentConfirmationEmail({ businessName, subdomain, email }) {
           <!-- Create Another -->
           <div style="text-align: center; padding-top: 16px; border-top: 1px solid #e5e7eb;">
             <a href="${createAnotherUrl}" style="color: #667eea; text-decoration: none; font-size: 14px;">
-              Create Another Site
+              ${text.createAnother}
             </a>
           </div>
         </div>
@@ -278,7 +310,7 @@ function buildPaymentConfirmationEmail({ businessName, subdomain, email }) {
         <!-- Footer -->
         <div style="background: #f9fafb; padding: 20px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
           <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-            You're receiving this email because you claimed a site on <a href="https://speakyour.site" style="color: #667eea;">SpeakYour.Site</a>
+            ${text.footer} <a href="https://speakyour.site" style="color: #667eea;">SpeakYour.Site</a>
           </p>
         </div>
       </div>

@@ -29,7 +29,7 @@ export async function POST(request) {
   )
 
   try {
-    const { siteId, subdomain, email, phone, tier = 'pro', password } = await request.json()
+    const { siteId, subdomain, email, phone, tier = 'pro', password, language = 'en' } = await request.json()
 
     // Validate required fields
     if (!siteId || !subdomain || !email) {
@@ -71,6 +71,14 @@ export async function POST(request) {
 
     if (site.payment_status === 'paid') {
       return Response.json({ error: 'Site has already been claimed' }, { status: 400 })
+    }
+
+    // Update owner language preference
+    if (language && (language === 'en' || language === 'es')) {
+      await supabase
+        .from('generated_sites')
+        .update({ owner_language: language })
+        .eq('id', siteId)
     }
 
     // Check subdomain availability (exclude current site in case they're reclaiming)

@@ -5,6 +5,36 @@ import ClaimModal from './ClaimModal'
 import EditPanel from './EditPanel'
 import EditSheet from './EditSheet'
 
+// UI Translations
+const translations = {
+  en: {
+    sitePreview: 'Your site preview',
+    leftToClaim: 'left to claim',
+    expiringSoon: 'Expiring soon!',
+    claimMySite: 'Claim My Site',
+    siteIsLive: 'Your site is live!',
+    visit: 'Visit',
+    edit: 'Edit',
+    previewExpired: 'Preview Expired',
+    expiredText: (name) => `This website preview for <strong>${name || 'your business'}</strong> has expired. But don't worry - you can create a new one in minutes!`,
+    createNewSite: 'Create a New Site',
+    claimBeforeGone: 'Or claim this exact design before it\'s gone forever',
+  },
+  es: {
+    sitePreview: 'Vista previa de tu sitio',
+    leftToClaim: 'para reclamar',
+    expiringSoon: '¡Expira pronto!',
+    claimMySite: 'Reclamar Mi Sitio',
+    siteIsLive: '¡Tu sitio está en vivo!',
+    visit: 'Visitar',
+    edit: 'Editar',
+    previewExpired: 'Vista Previa Expirada',
+    expiredText: (name) => `La vista previa del sitio web para <strong>${name || 'tu negocio'}</strong> ha expirado. ¡Pero no te preocupes, puedes crear uno nuevo en minutos!`,
+    createNewSite: 'Crear un Nuevo Sitio',
+    claimBeforeGone: 'O reclama este diseño exacto antes de que desaparezca para siempre',
+  }
+}
+
 function getTimeRemaining(createdAt) {
   const created = new Date(createdAt)
   const expires = new Date(created.getTime() + 24 * 60 * 60 * 1000) // 24 hours
@@ -37,7 +67,23 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false)
   const [editsRemaining, setEditsRemaining] = useState(5 - (site.preview_edits_used || 0))
   const [currentHtml, setCurrentHtml] = useState(site.html_code)
+  const [language, setLanguage] = useState('en')
   const isMobile = useIsMobile()
+
+  // Load language preference from localStorage
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('preferredLanguage')
+    if (savedLanguage === 'en' || savedLanguage === 'es') {
+      setLanguage(savedLanguage)
+    }
+  }, [])
+
+  // Persist language choice to localStorage
+  useEffect(() => {
+    localStorage.setItem('preferredLanguage', language)
+  }, [language])
+
+  const t = translations[language] || translations.en
 
   useEffect(() => {
     if (isPaid || isExpired) return
@@ -63,27 +109,48 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
   if (isExpired) {
     return (
       <div style={styles.container}>
+        {/* Language Toggle for expired view */}
+        <div style={styles.expiredLangToggle}>
+          {isMobile ? (
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              style={styles.langDropdown}
+            >
+              <option value="en">🇺🇸 English</option>
+              <option value="es">🇪🇸 Español</option>
+            </select>
+          ) : (
+            <div style={styles.langToggleContainer}>
+              <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
+                🇺🇸 EN
+              </button>
+              <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
+                🇪🇸 ES
+              </button>
+              <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
+            </div>
+          )}
+        </div>
+
         {/* Expired Overlay */}
         <div style={styles.expiredOverlay}>
           <div style={styles.expiredCard}>
             <div style={styles.expiredIcon}>&#9200;</div>
-            <h1 style={styles.expiredTitle}>Preview Expired</h1>
-            <p style={styles.expiredText}>
-              This website preview for <strong>{site.business_name || 'your business'}</strong> has expired.
-              But don&apos;t worry - you can create a new one in minutes!
-            </p>
+            <h1 style={styles.expiredTitle}>{t.previewExpired}</h1>
+            <p style={styles.expiredTextStyle} dangerouslySetInnerHTML={{ __html: t.expiredText(site.business_name) }} />
             <a href="/" style={styles.expiredButton}>
-              Create a New Site
+              {t.createNewSite}
             </a>
             <p style={styles.expiredSubtext}>
-              Or claim this exact design before it&apos;s gone forever
+              {t.claimBeforeGone}
             </p>
             <div style={styles.expiredActions}>
               <button
                 onClick={() => setShowClaimModal(true)}
                 style={styles.claimButton}
               >
-                Claim My Site
+                {t.claimMySite}
               </button>
             </div>
           </div>
@@ -140,13 +207,34 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
           `}</style>
           <div className="header-row" style={styles.header}>
             <div className="header-title" style={styles.headerTextWrapper}>
-              <span style={styles.headerText}>Your site preview</span>
+              <span style={styles.headerText}>{t.sitePreview}</span>
             </div>
+            {/* Language Toggle */}
+            {isMobile ? (
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                style={styles.langDropdown}
+              >
+                <option value="en">🇺🇸 English</option>
+                <option value="es">🇪🇸 Español</option>
+              </select>
+            ) : (
+              <div style={styles.langToggleContainer}>
+                <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
+                  🇺🇸 EN
+                </button>
+                <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
+                  🇪🇸 ES
+                </button>
+                <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
+              </div>
+            )}
             <span className="urgency-badge" style={styles.urgencyBadge}>
               {timeLeft.total > 0 ? (
-                <span style={styles.timerTime}>{timeLeft.hours}h {timeLeft.minutes}m left to claim</span>
+                <span style={styles.timerTime}>{timeLeft.hours}h {timeLeft.minutes}m {t.leftToClaim}</span>
               ) : (
-                'Expiring soon!'
+                t.expiringSoon
               )}
             </span>
             <button
@@ -154,7 +242,7 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
               onClick={() => setShowClaimModal(true)}
               style={styles.claimCta}
             >
-              Claim My Site
+              {t.claimMySite}
             </button>
           </div>
         </>
@@ -163,7 +251,28 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
       {/* Success Header for Paid Sites */}
       {isPaid && (
         <div style={styles.successHeader}>
-          <span>&#10003; Your site is live!</span>
+          <span>&#10003; {t.siteIsLive}</span>
+          {/* Language Toggle for paid sites */}
+          {isMobile ? (
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              style={styles.langDropdown}
+            >
+              <option value="en">🇺🇸 English</option>
+              <option value="es">🇪🇸 Español</option>
+            </select>
+          ) : (
+            <div style={styles.langToggleContainer}>
+              <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
+                🇺🇸 EN
+              </button>
+              <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
+                🇪🇸 ES
+              </button>
+              <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
+            </div>
+          )}
           {site.subdomain && (
             <a
               href={`https://${site.subdomain}.speakyour.site`}
@@ -171,7 +280,7 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
               rel="noopener noreferrer"
               style={styles.liveLink}
             >
-              Visit {site.subdomain}.speakyour.site &#8594;
+              {t.visit} {site.subdomain}.speakyour.site &#8594;
             </a>
           )}
         </div>
@@ -207,13 +316,13 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
             <button
               onClick={() => setIsEditPanelOpen(true)}
               style={styles.fab}
-              title="Edit your site"
+              title={t.edit}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
-              <span style={styles.fabLabel}>Edit</span>
+              <span style={styles.fabLabel}>{t.edit}</span>
             </button>
           )}
         </div>
@@ -443,5 +552,61 @@ const styles = {
     width: '100%',
     filter: 'blur(8px)',
     pointerEvents: 'none',
+  },
+  // Language toggle styles
+  langToggleContainer: {
+    display: 'flex',
+    position: 'relative',
+    background: '#f3f4f6',
+    borderRadius: '8px',
+    padding: '3px',
+  },
+  langToggleBtn: {
+    position: 'relative',
+    zIndex: 1,
+    background: 'transparent',
+    border: 'none',
+    padding: '6px 12px',
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    color: '#666',
+    transition: 'color 0.2s',
+    borderRadius: '6px',
+  },
+  langToggleBtnActive: {
+    color: '#1a1a2e',
+  },
+  langToggleSlider: {
+    position: 'absolute',
+    top: '3px',
+    left: '3px',
+    width: 'calc(50% - 3px)',
+    height: 'calc(100% - 6px)',
+    background: 'white',
+    borderRadius: '6px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    transition: 'transform 0.2s ease',
+  },
+  langDropdown: {
+    background: 'white',
+    color: '#555',
+    border: '1px solid #ddd',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    fontWeight: '500',
+    fontSize: '14px',
+    cursor: 'pointer',
+  },
+  expiredLangToggle: {
+    position: 'absolute',
+    top: '16px',
+    right: '16px',
+    zIndex: 20,
+  },
+  expiredTextStyle: {
+    color: '#555',
+    lineHeight: '1.6',
+    marginBottom: '24px',
   },
 }

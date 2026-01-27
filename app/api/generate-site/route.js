@@ -102,7 +102,8 @@ export async function POST(request) {
         industry: requirements.industry,
         requirements: requirements,
         html_code: cleanedHtml,
-        status: 'preview'
+        status: 'preview',
+        owner_language: requirements.ownerLanguage || 'en'
       })
       .select()
       .single()

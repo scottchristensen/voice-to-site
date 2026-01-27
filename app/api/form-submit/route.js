@@ -46,7 +46,7 @@ export async function POST(request) {
     // Verify the site exists and is paid
     const { data: site, error: siteError } = await supabase
       .from('generated_sites')
-      .select('id, business_name, email, payment_status, subdomain')
+      .select('id, business_name, email, payment_status, subdomain, owner_language')
       .eq('id', siteIdNum)
       .single()
 
@@ -86,12 +86,17 @@ export async function POST(request) {
     // Send email notification to site owner
     let emailSent = false
     const ownerEmail = site.email
+    const ownerLanguage = site.owner_language || 'en'
     if (ownerEmail && resend) {
       try {
+        const emailSubject = ownerLanguage === 'es'
+          ? `Nueva solicitud de ${formType === 'contact' ? 'contacto' : formType} para ${site.business_name || 'tu sitio'}`
+          : `New ${formType} form submission for ${site.business_name || 'your site'}`
+
         await resend.emails.send({
           from: 'SpeakYour.Site <notifications@speakyour.site>',
           to: ownerEmail,
-          subject: `New ${formType} form submission for ${site.business_name || 'your site'}`,
+          subject: emailSubject,
           html: buildEmailHtml({
             businessName: site.business_name,
             subdomain: site.subdomain,
@@ -100,7 +105,8 @@ export async function POST(request) {
             email,
             phone,
             message,
-            additionalFields
+            additionalFields,
+            language: ownerLanguage
           })
         })
         emailSent = true
@@ -129,8 +135,32 @@ export async function POST(request) {
   }
 }
 
-function buildEmailHtml({ businessName, subdomain, formType, name, email, phone, message, additionalFields }) {
+function buildEmailHtml({ businessName, subdomain, formType, name, email, phone, message, additionalFields, language = 'en' }) {
   const siteUrl = subdomain ? `https://${subdomain}.speakyour.site` : null
+
+  // Translations
+  const t = {
+    en: {
+      newSubmission: `New ${formType} Submission`,
+      yourWebsite: 'Your Website',
+      name: 'Name',
+      email: 'Email',
+      phone: 'Phone',
+      message: 'Message',
+      footer: 'This message was sent from your website hosted by'
+    },
+    es: {
+      newSubmission: `Nueva Solicitud de ${formType === 'contact' ? 'Contacto' : formType}`,
+      yourWebsite: 'Tu Sitio Web',
+      name: 'Nombre',
+      email: 'Correo Electrónico',
+      phone: 'Teléfono',
+      message: 'Mensaje',
+      footer: 'Este mensaje fue enviado desde tu sitio web alojado por'
+    }
+  }
+
+  const text = t[language] || t.en
 
   return `
     <!DOCTYPE html>
@@ -141,9 +171,9 @@ function buildEmailHtml({ businessName, subdomain, formType, name, email, phone,
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px; border-radius: 12px 12px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">New ${formType} Submission</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px;">${text.newSubmission}</h1>
         <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">
-          ${businessName || 'Your Website'}${siteUrl ? ` - <a href="${siteUrl}" style="color: white;">${siteUrl}</a>` : ''}
+          ${businessName || text.yourWebsite}${siteUrl ? ` - <a href="${siteUrl}" style="color: white;">${siteUrl}</a>` : ''}
         </p>
       </div>
 
@@ -151,19 +181,19 @@ function buildEmailHtml({ businessName, subdomain, formType, name, email, phone,
         <table style="width: 100%; border-collapse: collapse;">
           ${name ? `
           <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; width: 100px;">Name</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; width: 100px;">${text.name}</td>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; font-weight: 500;">${escapeHtml(name)}</td>
           </tr>` : ''}
           ${email ? `
           <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Email</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${text.email}</td>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
               <a href="mailto:${escapeHtml(email)}" style="color: #667eea; font-weight: 500;">${escapeHtml(email)}</a>
             </td>
           </tr>` : ''}
           ${phone ? `
           <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Phone</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${text.phone}</td>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
               <a href="tel:${escapeHtml(phone)}" style="color: #667eea; font-weight: 500;">${escapeHtml(phone)}</a>
             </td>
@@ -177,13 +207,13 @@ function buildEmailHtml({ businessName, subdomain, formType, name, email, phone,
 
         ${message ? `
         <div style="margin-top: 20px;">
-          <p style="color: #6b7280; margin: 0 0 8px 0; font-size: 14px;">Message</p>
+          <p style="color: #6b7280; margin: 0 0 8px 0; font-size: 14px;">${text.message}</p>
           <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb; white-space: pre-wrap;">${escapeHtml(message)}</div>
         </div>` : ''}
 
         <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center;">
           <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-            This message was sent from your website hosted by <a href="https://speakyour.site" style="color: #667eea;">SpeakYour.Site</a>
+            ${text.footer} <a href="https://speakyour.site" style="color: #667eea;">SpeakYour.Site</a>
           </p>
         </div>
       </div>

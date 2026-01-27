@@ -70,7 +70,16 @@ export default function ClaimModal({ site, isOpen, onClose }) {
   const [availabilityError, setAvailabilityError] = useState('')
   const [emailError, setEmailError] = useState('')
   const [passwordError, setPasswordError] = useState('')
+  const [language, setLanguage] = useState('en')
   const isMobile = useIsMobile()
+
+  // Load language preference from localStorage
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('preferredLanguage')
+    if (savedLanguage === 'en' || savedLanguage === 'es') {
+      setLanguage(savedLanguage)
+    }
+  }, [])
 
   // Auto-suggest subdomain from business name
   useEffect(() => {
@@ -169,7 +178,8 @@ export default function ClaimModal({ site, isOpen, onClose }) {
           email,
           phone,
           tier: selectedTier,
-          password
+          password,
+          language
         })
       })
 
