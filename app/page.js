@@ -728,6 +728,7 @@ export default function Home() {
             className="cta-btn"
             style={{
               ...styles.ctaButton,
+              ...styles.ctaButtonWhite,
               ...(isCallActive ? styles.ctaButtonActive : {}),
               ...(callStatus === 'connecting' ? styles.ctaButtonDisabled : {})
             }}
@@ -1128,6 +1129,11 @@ const styles = {
     opacity: 0.7,
     cursor: 'not-allowed',
   },
+  ctaButtonWhite: {
+    background: 'white',
+    color: '#667eea',
+    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+  },
   ctaButtonMobile: {
     width: '100%',
     textAlign: 'center',
@@ -1206,12 +1212,15 @@ const styles = {
   },
   browserMockup: {
     width: '100%',
-    maxWidth: '340px',
+    maxWidth: '440px',
+    aspectRatio: '16 / 10',
     background: 'white',
     borderRadius: '12px',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
     overflow: 'hidden',
     border: '1px solid #e5e5e5',
+    display: 'flex',
+    flexDirection: 'column',
   },
   browserBar: {
     display: 'flex',
@@ -1228,10 +1237,13 @@ const styles = {
   },
   browserContent: {
     padding: '20px',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
   },
   mockupHero: {
-    height: '140px',
-    background: '#374151',
+    height: '100px',
+    background: '#e5e5e5',
     borderRadius: '8px',
     marginBottom: '16px',
   },
