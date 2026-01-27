@@ -67,16 +67,21 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false)
   const [editsRemaining, setEditsRemaining] = useState(5 - (site.preview_edits_used || 0))
   const [currentHtml, setCurrentHtml] = useState(site.html_code)
-  const [language, setLanguage] = useState('en')
+  // Default to site's owner_language, then localStorage, then 'en'
+  const [language, setLanguage] = useState(() => site.owner_language || 'en')
   const isMobile = useIsMobile()
 
-  // Load language preference from localStorage
+  // Load language preference - prefer site's owner_language, then localStorage
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('preferredLanguage')
-    if (savedLanguage === 'en' || savedLanguage === 'es') {
-      setLanguage(savedLanguage)
+    if (site.owner_language === 'es' || site.owner_language === 'en') {
+      setLanguage(site.owner_language)
+    } else {
+      const savedLanguage = localStorage.getItem('preferredLanguage')
+      if (savedLanguage === 'en' || savedLanguage === 'es') {
+        setLanguage(savedLanguage)
+      }
     }
-  }, [])
+  }, [site.owner_language])
 
   // Persist language choice to localStorage
   useEffect(() => {
@@ -115,10 +120,10 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              style={styles.langDropdown}
+              style={styles.langDropdownMobile}
             >
-              <option value="en">🇺🇸 English</option>
-              <option value="es">🇪🇸 Español</option>
+              <option value="en">EN</option>
+              <option value="es">ES</option>
             </select>
           ) : (
             <div style={styles.langToggleContainer}>
@@ -198,10 +203,14 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
               }
               .urgency-badge {
                 order: 2 !important;
+                flex: 1 !important;
               }
               .claim-cta-btn {
-                order: 3 !important;
+                order: 4 !important;
                 width: 100% !important;
+              }
+              .lang-dropdown {
+                order: 3 !important;
               }
             }
           `}</style>
@@ -209,15 +218,27 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
             <div className="header-title" style={styles.headerTextWrapper}>
               <span style={styles.headerText}>{t.sitePreview}</span>
             </div>
-            {/* Language Toggle */}
+            {/* Urgency Badge - two lines */}
+            <span className="urgency-badge" style={styles.urgencyBadge}>
+              {timeLeft.total > 0 ? (
+                <>
+                  <span style={styles.timerTime}>{timeLeft.hours}h {timeLeft.minutes}m</span>
+                  <span style={styles.timerLabel}>{t.leftToClaim}</span>
+                </>
+              ) : (
+                t.expiringSoon
+              )}
+            </span>
+            {/* Language Toggle - on right */}
             {isMobile ? (
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                style={styles.langDropdown}
+                className="lang-dropdown"
+                style={styles.langDropdownMobile}
               >
-                <option value="en">🇺🇸 English</option>
-                <option value="es">🇪🇸 Español</option>
+                <option value="en">EN</option>
+                <option value="es">ES</option>
               </select>
             ) : (
               <div style={styles.langToggleContainer}>
@@ -230,13 +251,6 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
                 <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
               </div>
             )}
-            <span className="urgency-badge" style={styles.urgencyBadge}>
-              {timeLeft.total > 0 ? (
-                <span style={styles.timerTime}>{timeLeft.hours}h {timeLeft.minutes}m {t.leftToClaim}</span>
-              ) : (
-                t.expiringSoon
-              )}
-            </span>
             <button
               className="claim-cta-btn"
               onClick={() => setShowClaimModal(true)}
@@ -257,10 +271,10 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              style={styles.langDropdown}
+              style={styles.langDropdownMobile}
             >
-              <option value="en">🇺🇸 English</option>
-              <option value="es">🇪🇸 Español</option>
+              <option value="en">EN</option>
+              <option value="es">ES</option>
             </select>
           ) : (
             <div style={styles.langToggleContainer}>
@@ -396,6 +410,13 @@ const styles = {
     fontSize: '15px',
     fontWeight: '700',
     fontVariantNumeric: 'tabular-nums',
+    lineHeight: '1',
+  },
+  timerLabel: {
+    fontSize: '11px',
+    fontWeight: '500',
+    opacity: '0.8',
+    lineHeight: '1',
   },
   claimCta: {
     background: '#2563eb',
@@ -469,8 +490,9 @@ const styles = {
     width: '100%',
     height: '100%',
     border: 'none',
+    outline: 'none',
     display: 'block',
-    background: '#f5f5f7',
+    background: 'white',
   },
   // Expired State (still uses container)
   container: {
@@ -597,6 +619,21 @@ const styles = {
     fontWeight: '500',
     fontSize: '14px',
     cursor: 'pointer',
+  },
+  langDropdownMobile: {
+    background: 'transparent',
+    color: '#555',
+    border: 'none',
+    padding: '6px 2px 6px 8px',
+    fontWeight: '600',
+    fontSize: '14px',
+    cursor: 'pointer',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 0 center',
+    paddingRight: '14px',
   },
   expiredLangToggle: {
     position: 'absolute',
