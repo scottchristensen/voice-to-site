@@ -163,6 +163,20 @@ export default async function SitePage({ params }) {
             }
           });
         });
+
+        // Add Enter key support for form inputs (in case forms lack submit buttons)
+        const inputs = document.querySelectorAll('form input, form textarea');
+        inputs.forEach(function(input) {
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey && input.tagName !== 'TEXTAREA') {
+              e.preventDefault();
+              const form = input.closest('form');
+              if (form) {
+                form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+              }
+            }
+          });
+        });
       });
     })();
   `;
