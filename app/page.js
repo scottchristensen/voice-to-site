@@ -87,7 +87,18 @@ const translations = {
         features: ['Everything in Pro', '3 designer edits/month', 'Human-reviewed changes']
       }
     },
-    footer: 'Built with SpeakYour.Site'
+    bottomCta: {
+      title: 'Ready to Build Your Website?',
+      subtitle: 'Join thousands of business owners who have created their professional website in minutes.',
+      button: 'Start Building Your Site'
+    },
+    footer: {
+      brand: 'SpeakYour.Site',
+      tagline: 'Build beautiful websites just by talking.',
+      copyright: '2025 SpeakYour.Site. All rights reserved.',
+      privacy: 'Privacy Policy',
+      terms: 'Terms of Service'
+    }
   },
   es: {
     nav: {
@@ -173,7 +184,18 @@ const translations = {
         features: ['Todo lo de Pro', '3 ediciones de diseñador/mes', 'Cambios revisados por humanos']
       }
     },
-    footer: 'Hecho con SpeakYour.Site'
+    bottomCta: {
+      title: '¿Listo para Crear Tu Sitio Web?',
+      subtitle: 'Únete a miles de dueños de negocios que han creado su sitio web profesional en minutos.',
+      button: 'Comienza a Crear Tu Sitio'
+    },
+    footer: {
+      brand: 'SpeakYour.Site',
+      tagline: 'Crea sitios web hermosos solo hablando.',
+      copyright: '2025 SpeakYour.Site. Todos los derechos reservados.',
+      privacy: 'Política de Privacidad',
+      terms: 'Términos de Servicio'
+    }
   }
 }
 
@@ -366,6 +388,12 @@ export default function Home() {
           transform: translateY(-4px);
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
         }
+        .footer-link {
+          transition: color 0.2s !important;
+        }
+        .footer-link:hover {
+          color: #a5b4fc !important;
+        }
       `}</style>
       {/* Success Modal */}
       {showModal && previewUrl && (
@@ -397,7 +425,8 @@ export default function Home() {
       )}
 
       {/* Navigation */}
-      <nav style={{...styles.nav, ...(isDarkMode && styles.navDark), ...(isMobile && styles.navMobile)}}>
+      <div style={{...styles.navWrapper, ...(isDarkMode && styles.navWrapperDark)}}>
+      <nav style={{...styles.nav, ...(isMobile && styles.navMobile)}}>
         <div style={styles.logo}>{t.nav.logo}</div>
         <div style={{...styles.navLinks, ...(isMobile && styles.navLinksMobile)}}>
           {/* Hide nav links on mobile */}
@@ -455,6 +484,7 @@ export default function Home() {
           </a>
         </div>
       </nav>
+      </div>
 
       {/* Hero Section */}
       <section style={{...styles.hero, ...(isDarkMode && styles.heroDark)}}>
@@ -683,9 +713,68 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Bottom CTA Section */}
+      <section style={{...styles.bottomCtaSection, ...(isDarkMode && styles.bottomCtaSectionDark)}}>
+        <div style={styles.bottomCtaContainer}>
+          <h2 style={{...styles.bottomCtaTitle, ...(isDarkMode && styles.bottomCtaTitleDark)}}>
+            {t.bottomCta.title}
+          </h2>
+          <p style={{...styles.bottomCtaSubtitle, ...(isDarkMode && styles.bottomCtaSubtitleDark)}}>
+            {t.bottomCta.subtitle}
+          </p>
+          <button
+            onClick={isCallActive ? endCall : startCall}
+            disabled={callStatus === 'connecting'}
+            className="cta-btn"
+            style={{
+              ...styles.ctaButton,
+              ...(isCallActive ? styles.ctaButtonActive : {}),
+              ...(callStatus === 'connecting' ? styles.ctaButtonDisabled : {})
+            }}
+          >
+            {callStatus === 'idle' && (
+              <>
+                <MicIcon />
+                {t.bottomCta.button}
+              </>
+            )}
+            {callStatus === 'connecting' && (
+              <>
+                <LoadingSpinner />
+                {t.hero.ctaConnecting}
+              </>
+            )}
+            {callStatus === 'connected' && (
+              <>
+                <PhoneOffIcon />
+                {t.hero.ctaEnd}
+              </>
+            )}
+            {callStatus === 'ended' && (
+              <>
+                <CheckIcon />
+                {t.hero.ctaEnded}
+              </>
+            )}
+          </button>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer style={{...styles.footer, ...(isDarkMode && styles.footerDark)}}>
-        <p>{t.footer}</p>
+        <div style={styles.footerContent}>
+          <div style={styles.footerBrand}>
+            <span style={styles.footerLogo}>{t.footer.brand}</span>
+            <p style={styles.footerTagline}>{t.footer.tagline}</p>
+          </div>
+          <div style={styles.footerLinks}>
+            <a href="/privacy" className="footer-link" style={{...styles.footerLink, ...(isDarkMode && styles.footerLinkDark)}}>{t.footer.privacy}</a>
+            <a href="/terms" className="footer-link" style={{...styles.footerLink, ...(isDarkMode && styles.footerLinkDark)}}>{t.footer.terms}</a>
+          </div>
+        </div>
+        <div style={styles.footerBottom}>
+          <p style={styles.footerCopyright}>{t.footer.copyright}</p>
+        </div>
       </footer>
 
       <style jsx global>{`
@@ -841,11 +930,22 @@ const styles = {
     color: '#1b5e20',
     fontWeight: '600',
   },
+  navWrapper: {
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+    background: '#ffffff',
+    borderBottom: '1px solid #eee',
+  },
+  navWrapperDark: {
+    background: '#0a0a0a',
+    borderBottom: '1px solid #222',
+  },
   nav: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '20px 40px',
+    padding: '16px 40px',
     maxWidth: '1200px',
     margin: '0 auto',
   },
@@ -1258,10 +1358,89 @@ const styles = {
     color: '#555',
     lineHeight: '2',
   },
-  footer: {
+  // Bottom CTA Section
+  bottomCtaSection: {
+    padding: '80px 40px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     textAlign: 'center',
-    padding: '40px',
+  },
+  bottomCtaSectionDark: {
+    background: 'linear-gradient(135deg, #4c5fd7 0%, #5c3d8a 100%)',
+  },
+  bottomCtaContainer: {
+    maxWidth: '700px',
+    margin: '0 auto',
+  },
+  bottomCtaTitle: {
+    fontSize: '36px',
+    fontWeight: '700',
+    color: 'white',
+    marginBottom: '16px',
+  },
+  bottomCtaTitleDark: {
+    color: 'white',
+  },
+  bottomCtaSubtitle: {
+    fontSize: '18px',
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: '32px',
+    lineHeight: '1.6',
+  },
+  bottomCtaSubtitleDark: {
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  footer: {
+    padding: '48px 40px 24px',
+    background: '#1a1a2e',
     color: '#888',
+  },
+  footerContent: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: '32px',
+    marginBottom: '32px',
+  },
+  footerBrand: {
+    textAlign: 'left',
+  },
+  footerLogo: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: 'white',
+    display: 'block',
+    marginBottom: '8px',
+  },
+  footerTagline: {
+    color: '#888',
+    fontSize: '14px',
+  },
+  footerLinks: {
+    display: 'flex',
+    gap: '24px',
+  },
+  footerLink: {
+    color: '#888',
+    textDecoration: 'none',
+    fontSize: '14px',
+    transition: 'color 0.2s',
+  },
+  footerLinkDark: {
+    color: '#888',
+  },
+  footerBottom: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    paddingTop: '24px',
+    borderTop: '1px solid #333',
+    textAlign: 'center',
+  },
+  footerCopyright: {
+    color: '#666',
+    fontSize: '13px',
   },
   // Value Props Section
   valuePropsSection: {
