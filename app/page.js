@@ -27,7 +27,7 @@ const translations = {
       callIndicator: 'Speaking with Sarah...',
       previewReady: 'Your site is ready! ',
       previewLink: 'View it here →',
-      freeCta: 'Free preview - No credit card required',
+      freeCta: 'Free preview. No credit card required.',
       testButton: '🧪 Test Modal (Joe\'s Pizza)'
     },
     valueProps: {
@@ -113,7 +113,7 @@ const translations = {
       callIndicator: 'Hablando con Sarah...',
       previewReady: '¡Tu sitio está listo! ',
       previewLink: 'Míralo aquí →',
-      freeCta: 'Vista previa gratuita - No se requiere tarjeta de crédito',
+      freeCta: 'Vista previa gratuita. No se requiere tarjeta de crédito.',
       testButton: '🧪 Probar Modal (Joe\'s Pizza)'
     },
     valueProps: {
@@ -342,13 +342,8 @@ export default function Home() {
         .lang-toggle:active {
           transform: scale(0.98);
         }
-        .login-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
-        }
-        .login-btn:active {
-          transform: translateY(0);
-          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+        .login-link:hover {
+          color: #4f46e5 !important;
         }
         .cta-btn:hover:not(:disabled) {
           transform: scale(1.02);
@@ -454,7 +449,8 @@ export default function Home() {
               />
             </div>
           )}
-          <a href="/login" className="login-btn" style={isMobile ? {...styles.loginLink, ...(isDarkMode && styles.loginLinkDark)} : styles.loginButton}>
+          <span style={{...styles.pipeDivider, ...(isDarkMode && styles.pipeDividerDark)}}>|</span>
+          <a href="/login" className="login-link" style={{...styles.loginLink, ...(isDarkMode && styles.loginLinkDark)}}>
             {t.nav.login}
           </a>
         </div>
@@ -566,7 +562,7 @@ export default function Home() {
             </div>
 
             {/* Arrow pointing to website */}
-            <div style={styles.arrow}>→</div>
+            <div style={styles.arrow}>↘</div>
 
             {/* Generated Website Preview */}
             <div style={styles.browserMockup}>
@@ -955,15 +951,24 @@ const styles = {
     color: '#ddd',
     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
   },
-  // Mobile login link (text only, not button)
+  // Login link style
   loginLink: {
     color: '#667eea',
     textDecoration: 'none',
-    fontWeight: '600',
+    fontWeight: '500',
     fontSize: '14px',
   },
   loginLinkDark: {
     color: '#a5b4fc',
+  },
+  // Pipe divider between language toggle and login
+  pipeDivider: {
+    color: '#ddd',
+    fontSize: '14px',
+    fontWeight: '300',
+  },
+  pipeDividerDark: {
+    color: '#555',
   },
   // Mobile nav adjustments
   navMobile: {
@@ -971,20 +976,6 @@ const styles = {
   },
   navLinksMobile: {
     gap: '16px',
-  },
-  loginButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '10px 20px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '8px',
-    fontWeight: '600',
-    fontSize: '14px',
-    transition: 'transform 0.2s, box-shadow 0.2s',
-    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
   },
   hero: {
     display: 'flex',
@@ -1064,6 +1055,7 @@ const styles = {
     marginTop: '16px',
     color: '#888',
     fontSize: '14px',
+    textAlign: 'center',
   },
   testButton: {
     marginTop: '16px',
