@@ -266,7 +266,10 @@ export default function ClaimModal({ site, isOpen, onClose }) {
               </p>
 
               {/* Tier Selector */}
-              <div style={styles.tierGrid}>
+              <div style={{
+                ...styles.tierGrid,
+                ...(isMobile ? { flexDirection: 'column' } : {})
+              }}>
                 {TIERS.map((tier) => (
                   <button
                     key={tier.id}
@@ -539,13 +542,10 @@ const styles = {
   },
   tierGrid: {
     display: 'flex',
-    overflowX: 'auto',
     gap: '12px',
     marginBottom: '24px',
     paddingTop: '14px',
     paddingBottom: '8px',
-    scrollSnapType: 'x mandatory',
-    WebkitOverflowScrolling: 'touch',
   },
   tierCard: {
     position: 'relative',
@@ -556,9 +556,8 @@ const styles = {
     cursor: 'pointer',
     textAlign: 'left',
     transition: 'all 0.2s',
-    minWidth: '200px',
-    flexShrink: 0,
-    scrollSnapAlign: 'start',
+    flex: 1,
+    minWidth: 0,
   },
   tierCardSelected: {
     borderColor: '#2563eb',
