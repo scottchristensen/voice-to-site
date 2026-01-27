@@ -20,7 +20,8 @@ export default function SiteCard({ site }) {
       const data = await response.json()
 
       if (data.success) {
-        window.location.href = data.previewUrl
+        // Refresh the page to show the new duplicated site tile
+        window.location.reload()
       } else {
         alert('Failed to duplicate site: ' + data.error)
       }

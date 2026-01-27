@@ -42,6 +42,19 @@ export default function DashboardContent({ sites }) {
         .table-row:hover {
           background: #f9fafb !important;
         }
+        .create-tile:hover {
+          border-color: #667eea !important;
+          background: #f8faff !important;
+        }
+        .create-tile:hover svg {
+          color: #667eea !important;
+        }
+        .create-row:hover {
+          background: #f8faff !important;
+        }
+        .table-action-primary:hover {
+          background: #1d4ed8 !important;
+        }
         @media (max-width: 768px) {
           .dashboard-container {
             padding: 20px 16px !important;
@@ -118,6 +131,13 @@ export default function DashboardContent({ sites }) {
             {sites.map((site) => (
               <SiteCard key={site.id} site={site} />
             ))}
+            {/* Create New Site Card */}
+            <a href="/dashboard/new" className="create-tile" style={styles.createTile}>
+              <div style={styles.createTileIcon}>
+                <PlusIconLarge />
+              </div>
+              <span style={styles.createTileText}>Create new site</span>
+            </a>
           </div>
         ) : (
           <div className="table-wrapper" style={styles.tableWrapper}>
@@ -136,6 +156,15 @@ export default function DashboardContent({ sites }) {
                 {sites.map((site) => (
                   <SiteTableRow key={site.id} site={site} />
                 ))}
+                {/* Create New Site Row */}
+                <tr className="table-row create-row" style={styles.createTableRow}>
+                  <td colSpan="6" style={styles.createTableCell}>
+                    <a href="/dashboard/new" style={styles.createTableLink}>
+                      <PlusIconSmall />
+                      <span>Create new site</span>
+                    </a>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -163,6 +192,9 @@ export default function DashboardContent({ sites }) {
 function SiteTableRow({ site }) {
   const [isDuplicating, setIsDuplicating] = useState(false)
 
+  // Determine if site is claimed (has subdomain and is paid)
+  const isClaimed = site.subdomain && site.payment_status === 'paid'
+
   const handleDuplicate = async () => {
     setIsDuplicating(true)
     try {
@@ -172,7 +204,8 @@ function SiteTableRow({ site }) {
       const data = await response.json()
 
       if (data.success) {
-        window.location.href = data.previewUrl
+        // Refresh the page to show the new duplicated site
+        window.location.reload()
       } else {
         alert('Failed to duplicate site: ' + data.error)
       }
@@ -186,30 +219,44 @@ function SiteTableRow({ site }) {
     <tr className="table-row" style={styles.tableRow}>
       <td style={styles.tableCell}>
         <div style={styles.tableSiteInfo}>
-          <div style={styles.tableSiteAvatar}>
+          <div style={{
+            ...styles.tableSiteAvatar,
+            ...(isClaimed ? {} : styles.tableSiteAvatarDraft)
+          }}>
             {site.business_name?.[0]?.toUpperCase() || 'S'}
           </div>
           <span style={styles.tableSiteName}>{site.business_name || 'Untitled Site'}</span>
         </div>
       </td>
       <td style={styles.tableCell}>
-        <a
-          href={`https://${site.subdomain}.speakyour.site`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="table-subdomain"
-          style={styles.tableSubdomain}
-        >
-          {site.subdomain}.speakyour.site
-        </a>
+        {isClaimed ? (
+          <a
+            href={`https://${site.subdomain}.speakyour.site`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="table-subdomain"
+            style={styles.tableSubdomain}
+          >
+            {site.subdomain}.speakyour.site
+          </a>
+        ) : (
+          <span style={styles.tableSubdomainNone}>No URL assigned</span>
+        )}
       </td>
       <td style={styles.tableCell}>
-        <span style={{
-          ...styles.statusBadge,
-          ...(site.subscription_status === 'active' ? styles.statusActive : styles.statusInactive)
-        }}>
-          {site.subscription_status === 'active' ? 'Active' : 'Inactive'}
-        </span>
+        {isClaimed ? (
+          <span style={{
+            ...styles.statusBadge,
+            ...(site.subscription_status === 'active' ? styles.statusActive : styles.statusInactive)
+          }}>
+            {site.subscription_status === 'active' ? 'Active' : 'Inactive'}
+          </span>
+        ) : (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{...styles.statusBadge, ...styles.statusUnclaimed}}>Unclaimed</span>
+            <span style={{...styles.statusBadge, ...styles.statusNotActive}}>Not Active</span>
+          </div>
+        )}
       </td>
       <td style={styles.tableCell}>
         <span style={styles.tableDateText}>
@@ -217,33 +264,50 @@ function SiteTableRow({ site }) {
         </span>
       </td>
       <td style={styles.tableCell}>
-        <span style={styles.planBadge}>
-          {(site.plan_tier || site.plan_type || 'pro').charAt(0).toUpperCase() + (site.plan_tier || site.plan_type || 'pro').slice(1)}
-        </span>
+        {isClaimed ? (
+          <span style={styles.planBadge}>
+            {(site.plan_tier || site.plan_type || 'pro').charAt(0).toUpperCase() + (site.plan_tier || site.plan_type || 'pro').slice(1)}
+          </span>
+        ) : (
+          <span style={styles.planBadgeDraft}>Draft</span>
+        )}
       </td>
       <td style={styles.tableCellActions}>
-        <a
-          href={`https://${site.subdomain}.speakyour.site`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="table-action"
-          style={styles.tableAction}
-          title="View site"
-        >
-          <ExternalLinkIcon />
-        </a>
-        <a href={`/dashboard/sites/${site.id}/edit`} className="table-action" style={styles.tableAction} title="Edit site">
-          <EditIcon />
-        </a>
-        <button
-          onClick={handleDuplicate}
-          disabled={isDuplicating}
-          className="table-action"
-          style={styles.tableActionButton}
-          title="Duplicate site"
-        >
-          {isDuplicating ? '...' : <CopyIcon />}
-        </button>
+        {isClaimed ? (
+          <>
+            <a
+              href={`https://${site.subdomain}.speakyour.site`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="table-action"
+              style={styles.tableAction}
+              title="View site"
+            >
+              <ExternalLinkIcon />
+            </a>
+            <a href={`/edit/${site.id}`} className="table-action" style={styles.tableAction} title="Edit site">
+              <EditIcon />
+            </a>
+            <button
+              onClick={handleDuplicate}
+              disabled={isDuplicating}
+              className="table-action"
+              style={styles.tableActionButton}
+              title="Duplicate site"
+            >
+              {isDuplicating ? '...' : <CopyIcon />}
+            </button>
+          </>
+        ) : (
+          <>
+            <a href={`/preview/${site.id}`} className="table-action-primary" style={styles.tableActionPrimary} title="Claim site">
+              <ClaimIcon />
+            </a>
+            <a href={`/edit/${site.id}`} className="table-action" style={styles.tableAction} title="Edit site">
+              <EditIcon />
+            </a>
+          </>
+        )}
       </td>
     </tr>
   )
@@ -335,6 +399,33 @@ function TrashIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
       <polyline points="3 6 5 6 21 6"></polyline>
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    </svg>
+  )
+}
+
+function PlusIconLarge() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+  )
+}
+
+function PlusIconSmall() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+  )
+}
+
+function ClaimIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
     </svg>
   )
 }
@@ -713,5 +804,95 @@ const styles = {
     fontSize: '15px',
     fontWeight: '600',
     boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+  },
+  // Create new site tile
+  createTile: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '280px',
+    border: '2px dashed #d1d5db',
+    borderRadius: '12px',
+    background: 'transparent',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  createTileIcon: {
+    width: '64px',
+    height: '64px',
+    borderRadius: '50%',
+    background: '#f3f4f6',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#9ca3af',
+    marginBottom: '16px',
+    transition: 'all 0.2s',
+  },
+  createTileText: {
+    fontSize: '15px',
+    fontWeight: '500',
+    color: '#6b7280',
+  },
+  // Create new site table row
+  createTableRow: {
+    borderBottom: 'none',
+  },
+  createTableCell: {
+    padding: '16px',
+    textAlign: 'center',
+  },
+  createTableLink: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '12px 24px',
+    color: '#667eea',
+    textDecoration: 'none',
+    fontSize: '14px',
+    fontWeight: '500',
+    borderRadius: '8px',
+    border: '2px dashed #d1d5db',
+    transition: 'all 0.2s',
+  },
+  // Draft/unclaimed site styles for table
+  tableSiteAvatarDraft: {
+    background: 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
+  },
+  tableSubdomainNone: {
+    color: '#9ca3af',
+    fontStyle: 'italic',
+  },
+  statusUnclaimed: {
+    background: '#fef3c7',
+    color: '#92400e',
+  },
+  statusNotActive: {
+    background: '#f3f4f6',
+    color: '#6b7280',
+  },
+  planBadgeDraft: {
+    padding: '4px 10px',
+    background: '#f3f4f6',
+    borderRadius: '20px',
+    fontSize: '12px',
+    fontWeight: '500',
+    color: '#9ca3af',
+    fontStyle: 'italic',
+  },
+  tableActionPrimary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    background: '#2563eb',
+    borderRadius: '6px',
+    color: 'white',
+    textDecoration: 'none',
+    marginLeft: '8px',
+    transition: 'background 0.15s',
   },
 }
