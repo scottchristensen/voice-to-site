@@ -6,6 +6,8 @@ import SiteSettingsModal from './SiteSettingsModal'
 export default function SiteCard({ site }) {
   const [isDuplicating, setIsDuplicating] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Determine if site is claimed (has subdomain and is paid)
   const isClaimed = site.subdomain && site.payment_status === 'paid'
@@ -29,6 +31,26 @@ export default function SiteCard({ site }) {
       alert('Failed to duplicate site')
     }
     setIsDuplicating(false)
+  }
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/sites/${site.id}/delete`, {
+        method: 'DELETE',
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        window.location.reload()
+      } else {
+        alert('Failed to delete site: ' + data.error)
+      }
+    } catch {
+      alert('Failed to delete site')
+    }
+    setIsDeleting(false)
+    setShowDeleteConfirm(false)
   }
 
   return (
@@ -118,13 +140,23 @@ export default function SiteCard({ site }) {
             </a>
           </>
         )}
-        <button
-          onClick={() => setShowSettings(true)}
-          style={styles.settingsButton}
-          title="Site Settings"
-        >
-          <SettingsIcon />
-        </button>
+        {isClaimed ? (
+          <button
+            onClick={() => setShowSettings(true)}
+            style={styles.settingsButton}
+            title="Site Settings"
+          >
+            <SettingsIcon />
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            style={styles.deleteButton}
+            title="Delete Draft"
+          >
+            <TrashIcon />
+          </button>
+        )}
       </div>
 
       {/* Site Settings Modal */}
@@ -133,6 +165,34 @@ export default function SiteCard({ site }) {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
       />
+
+      {/* Delete Confirmation Modal for Drafts */}
+      {showDeleteConfirm && (
+        <div style={styles.modalOverlay} onClick={() => setShowDeleteConfirm(false)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h3 style={styles.modalTitle}>Delete Draft Site?</h3>
+            <p style={styles.modalText}>
+              Are you sure you want to delete "{site.business_name || 'Untitled Site'}"? This action cannot be undone.
+            </p>
+            <div style={styles.modalActions}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                style={styles.cancelButton}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                style={styles.deleteConfirmButton}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -179,6 +239,17 @@ function SettingsIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3"></circle>
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  )
+}
+
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      <line x1="10" y1="11" x2="10" y2="17"></line>
+      <line x1="14" y1="11" x2="14" y2="17"></line>
     </svg>
   )
 }
@@ -335,5 +406,75 @@ const styles = {
     cursor: 'pointer',
     marginLeft: 'auto',
     transition: 'all 0.2s',
+  },
+  deleteButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '8px',
+    background: 'transparent',
+    border: '1px solid #fca5a5',
+    borderRadius: '6px',
+    color: '#dc2626',
+    cursor: 'pointer',
+    marginLeft: 'auto',
+    transition: 'all 0.2s',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    background: 'white',
+    borderRadius: '12px',
+    padding: '24px',
+    maxWidth: '400px',
+    width: '90%',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+  },
+  modalTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1a1a2e',
+    marginBottom: '12px',
+  },
+  modalText: {
+    fontSize: '14px',
+    color: '#666',
+    marginBottom: '24px',
+    lineHeight: '1.5',
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'flex-end',
+  },
+  cancelButton: {
+    padding: '10px 20px',
+    background: 'white',
+    border: '1px solid #e5e5e5',
+    borderRadius: '8px',
+    color: '#333',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+  },
+  deleteConfirmButton: {
+    padding: '10px 20px',
+    background: '#dc2626',
+    border: 'none',
+    borderRadius: '8px',
+    color: 'white',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
   },
 }

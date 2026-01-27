@@ -29,7 +29,25 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
-  // If site has an active subscription, cancel it first
+  // Check if this is a draft site (never claimed/paid)
+  const isDraft = site.payment_status !== 'paid'
+
+  if (isDraft) {
+    // Hard delete for draft sites - they were never claimed
+    const { error: deleteError } = await supabase
+      .from('generated_sites')
+      .delete()
+      .eq('id', id)
+
+    if (deleteError) {
+      console.error('Delete error:', deleteError)
+      return NextResponse.json({ error: 'Failed to delete site' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, hardDelete: true })
+  }
+
+  // For claimed sites: If site has an active subscription, cancel it first
   if (site.stripe_subscription_id) {
     try {
       await stripe.subscriptions.cancel(site.stripe_subscription_id)
@@ -39,8 +57,7 @@ export async function DELETE(request, { params }) {
     }
   }
 
-  // Update the site to mark as deleted (soft delete)
-  // We keep the record but remove subdomain and mark as cancelled
+  // Soft delete for claimed sites - we keep the record but remove subdomain
   const { error: updateError } = await supabase
     .from('generated_sites')
     .update({
@@ -55,5 +72,5 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Failed to delete site' }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, hardDelete: false })
 }

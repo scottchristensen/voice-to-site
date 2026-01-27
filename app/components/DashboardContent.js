@@ -55,6 +55,9 @@ export default function DashboardContent({ sites }) {
         .table-action-primary:hover {
           background: #1d4ed8 !important;
         }
+        .table-action-delete:hover {
+          background: #fee2e2 !important;
+        }
         @media (max-width: 768px) {
           .dashboard-container {
             padding: 20px 16px !important;
@@ -191,6 +194,8 @@ export default function DashboardContent({ sites }) {
 
 function SiteTableRow({ site }) {
   const [isDuplicating, setIsDuplicating] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Determine if site is claimed (has subdomain and is paid)
   const isClaimed = site.subdomain && site.payment_status === 'paid'
@@ -215,101 +220,163 @@ function SiteTableRow({ site }) {
     setIsDuplicating(false)
   }
 
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/sites/${site.id}/delete`, {
+        method: 'DELETE',
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        window.location.reload()
+      } else {
+        alert('Failed to delete site: ' + data.error)
+      }
+    } catch {
+      alert('Failed to delete site')
+    }
+    setIsDeleting(false)
+    setShowDeleteConfirm(false)
+  }
+
   return (
-    <tr className="table-row" style={styles.tableRow}>
-      <td style={styles.tableCell}>
-        <div style={styles.tableSiteInfo}>
-          <div style={{
-            ...styles.tableSiteAvatar,
-            ...(isClaimed ? {} : styles.tableSiteAvatarDraft)
-          }}>
-            {site.business_name?.[0]?.toUpperCase() || 'S'}
+    <>
+      <tr className="table-row" style={styles.tableRow}>
+        <td style={styles.tableCell}>
+          <div style={styles.tableSiteInfo}>
+            <div style={{
+              ...styles.tableSiteAvatar,
+              ...(isClaimed ? {} : styles.tableSiteAvatarDraft)
+            }}>
+              {site.business_name?.[0]?.toUpperCase() || 'S'}
+            </div>
+            <span style={styles.tableSiteName}>{site.business_name || 'Untitled Site'}</span>
           </div>
-          <span style={styles.tableSiteName}>{site.business_name || 'Untitled Site'}</span>
-        </div>
-      </td>
-      <td style={styles.tableCell}>
-        {isClaimed ? (
-          <a
-            href={`https://${site.subdomain}.speakyour.site`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="table-subdomain"
-            style={styles.tableSubdomain}
-          >
-            {site.subdomain}.speakyour.site
-          </a>
-        ) : (
-          <span style={styles.tableSubdomainNone}>No URL assigned</span>
-        )}
-      </td>
-      <td style={styles.tableCell}>
-        {isClaimed ? (
-          <span style={{
-            ...styles.statusBadge,
-            ...(site.subscription_status === 'active' ? styles.statusActive : styles.statusInactive)
-          }}>
-            {site.subscription_status === 'active' ? 'Active' : 'Inactive'}
-          </span>
-        ) : (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{...styles.statusBadge, ...styles.statusUnclaimed}}>Unclaimed</span>
-            <span style={{...styles.statusBadge, ...styles.statusNotActive}}>Not Active</span>
-          </div>
-        )}
-      </td>
-      <td style={styles.tableCell}>
-        <span style={styles.tableDateText}>
-          {new Date(site.created_at).toLocaleDateString()}
-        </span>
-      </td>
-      <td style={styles.tableCell}>
-        {isClaimed ? (
-          <span style={styles.planBadge}>
-            {(site.plan_tier || site.plan_type || 'pro').charAt(0).toUpperCase() + (site.plan_tier || site.plan_type || 'pro').slice(1)}
-          </span>
-        ) : (
-          <span style={styles.planBadgeDraft}>Draft</span>
-        )}
-      </td>
-      <td style={styles.tableCellActions}>
-        {isClaimed ? (
-          <>
+        </td>
+        <td style={styles.tableCell}>
+          {isClaimed ? (
             <a
               href={`https://${site.subdomain}.speakyour.site`}
               target="_blank"
               rel="noopener noreferrer"
-              className="table-action"
-              style={styles.tableAction}
-              title="View site"
+              className="table-subdomain"
+              style={styles.tableSubdomain}
             >
-              <ExternalLinkIcon />
+              {site.subdomain}.speakyour.site
             </a>
-            <a href={`/edit/${site.id}`} className="table-action" style={styles.tableAction} title="Edit site">
-              <EditIcon />
-            </a>
-            <button
-              onClick={handleDuplicate}
-              disabled={isDuplicating}
-              className="table-action"
-              style={styles.tableActionButton}
-              title="Duplicate site"
-            >
-              {isDuplicating ? '...' : <CopyIcon />}
-            </button>
-          </>
-        ) : (
-          <>
-            <a href={`/preview/${site.id}`} className="table-action-primary" style={styles.tableActionPrimary} title="Claim site">
-              <ClaimIcon />
-            </a>
-            <a href={`/edit/${site.id}`} className="table-action" style={styles.tableAction} title="Edit site">
-              <EditIcon />
-            </a>
-          </>
-        )}
-      </td>
-    </tr>
+          ) : (
+            <span style={styles.tableSubdomainNone}>No URL assigned</span>
+          )}
+        </td>
+        <td style={styles.tableCell}>
+          {isClaimed ? (
+            <span style={{
+              ...styles.statusBadge,
+              ...(site.subscription_status === 'active' ? styles.statusActive : styles.statusInactive)
+            }}>
+              {site.subscription_status === 'active' ? 'Active' : 'Inactive'}
+            </span>
+          ) : (
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{...styles.statusBadge, ...styles.statusUnclaimed}}>Unclaimed</span>
+              <span style={{...styles.statusBadge, ...styles.statusNotActive}}>Not Active</span>
+            </div>
+          )}
+        </td>
+        <td style={styles.tableCell}>
+          <span style={styles.tableDateText}>
+            {new Date(site.created_at).toLocaleDateString()}
+          </span>
+        </td>
+        <td style={styles.tableCell}>
+          {isClaimed ? (
+            <span style={styles.planBadge}>
+              {(site.plan_tier || site.plan_type || 'pro').charAt(0).toUpperCase() + (site.plan_tier || site.plan_type || 'pro').slice(1)}
+            </span>
+          ) : (
+            <span style={styles.planBadgeDraft}>Draft</span>
+          )}
+        </td>
+        <td style={styles.tableCellActions}>
+          {isClaimed ? (
+            <>
+              <a
+                href={`https://${site.subdomain}.speakyour.site`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="table-action"
+                style={styles.tableAction}
+                title="View site"
+              >
+                <ExternalLinkIcon />
+              </a>
+              <a href={`/edit/${site.id}`} className="table-action" style={styles.tableAction} title="Edit site">
+                <EditIcon />
+              </a>
+              <button
+                onClick={handleDuplicate}
+                disabled={isDuplicating}
+                className="table-action"
+                style={styles.tableActionButton}
+                title="Duplicate site"
+              >
+                {isDuplicating ? '...' : <CopyIcon />}
+              </button>
+            </>
+          ) : (
+            <>
+              <a href={`/preview/${site.id}`} className="table-action-primary" style={styles.tableActionPrimary} title="Claim site">
+                <ClaimIcon />
+              </a>
+              <a href={`/edit/${site.id}`} className="table-action" style={styles.tableAction} title="Edit site">
+                <EditIcon />
+              </a>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="table-action-delete"
+                style={styles.tableActionDelete}
+                title="Delete draft"
+              >
+                <TrashIconSmall />
+              </button>
+            </>
+          )}
+        </td>
+      </tr>
+
+      {/* Delete Confirmation Modal for Drafts */}
+      {showDeleteConfirm && (
+        <tr>
+          <td colSpan="6" style={{ padding: 0, border: 'none' }}>
+            <div style={styles.modalOverlay} onClick={() => setShowDeleteConfirm(false)}>
+              <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+                <h3 style={styles.modalTitle}>Delete Draft Site?</h3>
+                <p style={styles.modalText}>
+                  Are you sure you want to delete "{site.business_name || 'Untitled Site'}"? This action cannot be undone.
+                </p>
+                <div style={styles.modalActions}>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    style={styles.cancelButton}
+                    disabled={isDeleting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    style={styles.deleteConfirmButton}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 
@@ -399,6 +466,17 @@ function TrashIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
       <polyline points="3 6 5 6 21 6"></polyline>
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    </svg>
+  )
+}
+
+function TrashIconSmall() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      <line x1="10" y1="11" x2="10" y2="17"></line>
+      <line x1="14" y1="11" x2="14" y2="17"></line>
     </svg>
   )
 }
@@ -894,5 +972,76 @@ const styles = {
     textDecoration: 'none',
     marginLeft: '8px',
     transition: 'background 0.15s',
+  },
+  tableActionDelete: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    background: '#fef2f2',
+    borderRadius: '6px',
+    color: '#dc2626',
+    border: 'none',
+    marginLeft: '8px',
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    background: 'white',
+    borderRadius: '12px',
+    padding: '24px',
+    maxWidth: '400px',
+    width: '90%',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+  },
+  modalTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1a1a2e',
+    marginBottom: '12px',
+  },
+  modalText: {
+    fontSize: '14px',
+    color: '#666',
+    marginBottom: '24px',
+    lineHeight: '1.5',
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'flex-end',
+  },
+  cancelButton: {
+    padding: '10px 20px',
+    background: 'white',
+    border: '1px solid #e5e5e5',
+    borderRadius: '8px',
+    color: '#333',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+  },
+  deleteConfirmButton: {
+    padding: '10px 20px',
+    background: '#dc2626',
+    border: 'none',
+    borderRadius: '8px',
+    color: 'white',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
   },
 }
