@@ -121,7 +121,7 @@ const translations = {
       ctaConnecting: 'Conectando...',
       ctaEnd: 'Finalizar Llamada',
       ctaEnded: 'Llamada Finalizada',
-      callIndicator: 'Hablando con Sarah...',
+      callIndicator: 'Hablando con Gabi...',
       previewReady: '¡Tu sitio está listo! ',
       previewLink: 'Míralo aquí →',
       freeCta: 'Vista previa gratuita. No se requiere tarjeta de crédito.',
