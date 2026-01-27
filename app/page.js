@@ -402,21 +402,26 @@ export default function Home() {
       )}
 
       {/* Navigation */}
-      <nav style={{...styles.nav, ...(isDarkMode && styles.navDark)}}>
+      <nav style={{...styles.nav, ...(isDarkMode && styles.navDark), ...(isMobile && styles.navMobile)}}>
         <div style={styles.logo}>{t.nav.logo}</div>
-        <div style={styles.navLinks}>
-          <a href="#how-it-works" className="home-nav-link" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.howItWorks}</a>
-          <a href="#pricing" className="home-nav-link" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.pricing}</a>
-          {/* Language Toggle - Sliding for desktop, dropdown for mobile */}
+        <div style={{...styles.navLinks, ...(isMobile && styles.navLinksMobile)}}>
+          {/* Hide nav links on mobile */}
+          {!isMobile && (
+            <>
+              <a href="#how-it-works" className="home-nav-link" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.howItWorks}</a>
+              <a href="#pricing" className="home-nav-link" style={{...styles.navLink, ...(isDarkMode && styles.navLinkDark)}}>{t.nav.pricing}</a>
+            </>
+          )}
+          {/* Language Toggle - Sliding for desktop, minimal dropdown for mobile */}
           {isMobile ? (
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="lang-dropdown"
-              style={{...styles.langDropdown, ...(isDarkMode && styles.langDropdownDark)}}
+              className="lang-dropdown-mobile"
+              style={{...styles.langDropdownMobile, ...(isDarkMode && styles.langDropdownMobileDark)}}
             >
-              <option value="en">🇺🇸 English</option>
-              <option value="es">🇪🇸 Español</option>
+              <option value="en">🇺🇸 EN</option>
+              <option value="es">🇪🇸 ES</option>
             </select>
           ) : (
             <div style={{...styles.langToggleContainer, ...(isDarkMode && styles.langToggleContainerDark)}}>
@@ -449,7 +454,7 @@ export default function Home() {
               />
             </div>
           )}
-          <a href="/login" className="login-btn" style={styles.loginButton}>
+          <a href="/login" className="login-btn" style={isMobile ? {...styles.loginLink, ...(isDarkMode && styles.loginLinkDark)} : styles.loginButton}>
             {t.nav.login}
           </a>
         </div>
@@ -928,6 +933,43 @@ const styles = {
     background: '#2a2a3e',
     color: '#ddd',
     borderColor: '#444',
+  },
+  // Mobile-specific dropdown (minimal, no border)
+  langDropdownMobile: {
+    background: 'transparent',
+    color: '#555',
+    border: 'none',
+    padding: '4px 2px',
+    fontWeight: '500',
+    fontSize: '14px',
+    cursor: 'pointer',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 0 center',
+    paddingRight: '14px',
+  },
+  langDropdownMobileDark: {
+    color: '#ddd',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+  },
+  // Mobile login link (text only, not button)
+  loginLink: {
+    color: '#667eea',
+    textDecoration: 'none',
+    fontWeight: '600',
+    fontSize: '14px',
+  },
+  loginLinkDark: {
+    color: '#a5b4fc',
+  },
+  // Mobile nav adjustments
+  navMobile: {
+    padding: '16px 20px',
+  },
+  navLinksMobile: {
+    gap: '16px',
   },
   loginButton: {
     display: 'inline-flex',
