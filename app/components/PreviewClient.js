@@ -116,26 +116,15 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
       <div style={styles.container}>
         {/* Language Toggle for expired view */}
         <div style={styles.expiredLangToggle}>
-          {isMobile ? (
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              style={styles.langDropdownMobile}
-            >
-              <option value="en">EN</option>
-              <option value="es">ES</option>
-            </select>
-          ) : (
-            <div style={styles.langToggleContainer}>
-              <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
-                🇺🇸 EN
-              </button>
-              <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
-                🇪🇸 ES
-              </button>
-              <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
-            </div>
-          )}
+          <div style={styles.langToggleContainer}>
+            <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
+              🇺🇸 EN
+            </button>
+            <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
+              🇪🇸 ES
+            </button>
+            <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
+          </div>
         </div>
 
         {/* Expired Overlay */}
@@ -203,13 +192,12 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
               }
               .urgency-badge {
                 order: 2 !important;
-                flex: 1 !important;
               }
               .claim-cta-btn {
                 order: 4 !important;
                 width: 100% !important;
               }
-              .lang-dropdown {
+              .lang-toggle {
                 order: 3 !important;
               }
             }
@@ -230,27 +218,15 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
               )}
             </span>
             {/* Language Toggle - on right */}
-            {isMobile ? (
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="lang-dropdown"
-                style={styles.langDropdownMobile}
-              >
-                <option value="en">EN</option>
-                <option value="es">ES</option>
-              </select>
-            ) : (
-              <div style={styles.langToggleContainer}>
-                <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
-                  🇺🇸 EN
-                </button>
-                <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
-                  🇪🇸 ES
-                </button>
-                <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
-              </div>
-            )}
+            <div className="lang-toggle" style={styles.langToggleContainer}>
+              <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
+                🇺🇸 EN
+              </button>
+              <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
+                🇪🇸 ES
+              </button>
+              <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
+            </div>
             <button
               className="claim-cta-btn"
               onClick={() => setShowClaimModal(true)}
@@ -267,26 +243,15 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
         <div style={styles.successHeader}>
           <span>&#10003; {t.siteIsLive}</span>
           {/* Language Toggle for paid sites */}
-          {isMobile ? (
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              style={styles.langDropdownMobile}
-            >
-              <option value="en">EN</option>
-              <option value="es">ES</option>
-            </select>
-          ) : (
-            <div style={styles.langToggleContainer}>
-              <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
-                🇺🇸 EN
-              </button>
-              <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
-                🇪🇸 ES
-              </button>
-              <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
-            </div>
-          )}
+          <div style={styles.langToggleContainer}>
+            <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
+              🇺🇸 EN
+            </button>
+            <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
+              🇪🇸 ES
+            </button>
+            <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
+          </div>
           {site.subdomain && (
             <a
               href={`https://${site.subdomain}.speakyour.site`}
