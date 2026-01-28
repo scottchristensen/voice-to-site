@@ -38,6 +38,12 @@ Ask these one at a time, conversationally:
 4. "Who are your typical customers?"
 5. "What makes your business special? What sets you apart?"
 6. "Do you have a color preference for your website? Maybe something that matches your logo or brand?"
+7. "Do you have a physical location where customers can visit you? Like a store, office, or restaurant?"
+   - If YES: "Great! What's the address?"
+     - Collect the full address (street, city, state, zip)
+     - Confirm by reading it back: "I have [address]. Is that correct?"
+     - This will be used to add a map and real photos to their website
+   - If NO (service-based, online, or home-based): "No problem! We'll focus on showcasing your services instead."
 
 Note: We'll use a contact form as the main call-to-action. Let them know they can customize this later.
 
@@ -107,6 +113,12 @@ Pregunta estas una a la vez, de manera conversacional:
 4. "¿Quiénes son tus clientes típicos?"
 5. "¿Qué hace especial a tu negocio? ¿Qué te diferencia?"
 6. "¿Tienes alguna preferencia de color para tu sitio web? ¿Quizás algo que combine con tu logo o marca?"
+7. "¿Tienes una ubicación física donde los clientes pueden visitarte? ¿Como una tienda, oficina, o restaurante?"
+   - Si SÍ: "¡Perfecto! ¿Cuál es la dirección?"
+     - Recopila la dirección completa (calle, ciudad, estado, código postal)
+     - Confirma leyéndola: "Tengo [dirección]. ¿Es correcto?"
+     - Esto se usará para agregar un mapa y fotos reales a su sitio web
+   - Si NO (servicio a domicilio, en línea, o desde casa): "¡No hay problema! Nos enfocaremos en mostrar tus servicios."
 
 Nota: Usaremos un formulario de contacto como llamada a la acción principal. Hazles saber que pueden personalizar esto después.
 
@@ -216,9 +228,92 @@ Add these tools to your VAPI assistant configuration:
 ```
 
 ### generateWebsite
-Use your existing generateWebsite tool configuration, but ensure it accepts:
-- `ownerPhone`: The caller's phone number (for phone lookup on future calls)
-- `ownerLanguage`: 'en' or 'es' based on which assistant is being used
+```json
+{
+  "name": "generateWebsite",
+  "description": "Generate a new website for the business based on the collected information. Call this after gathering all business details and security credentials.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "businessName": {
+        "type": "string",
+        "description": "The name of the business"
+      },
+      "industry": {
+        "type": "string",
+        "description": "The type of business (e.g., restaurant, salon, landscaping)"
+      },
+      "mainOffering": {
+        "type": "string",
+        "description": "The main service or product offered"
+      },
+      "targetAudience": {
+        "type": "string",
+        "description": "Who their typical customers are"
+      },
+      "valueProposition": {
+        "type": "string",
+        "description": "What makes the business special or unique"
+      },
+      "colorPreference": {
+        "type": "string",
+        "description": "Preferred colors for the website design"
+      },
+      "hasPhysicalLocation": {
+        "type": "boolean",
+        "description": "Whether the business has a physical storefront or location customers can visit"
+      },
+      "businessAddress": {
+        "type": "object",
+        "description": "Physical business address (only if hasPhysicalLocation is true)",
+        "properties": {
+          "street": {
+            "type": "string",
+            "description": "Street address (e.g., 123 Main Street)"
+          },
+          "city": {
+            "type": "string",
+            "description": "City name"
+          },
+          "state": {
+            "type": "string",
+            "description": "State abbreviation (e.g., TX, CA)"
+          },
+          "zip": {
+            "type": "string",
+            "description": "ZIP code"
+          },
+          "fullAddress": {
+            "type": "string",
+            "description": "The complete address as spoken by the caller"
+          }
+        }
+      },
+      "editPin": {
+        "type": "string",
+        "description": "4-digit PIN chosen by the caller for editing their site"
+      },
+      "editPassphrase": {
+        "type": "string",
+        "description": "Password phrase chosen by the caller (e.g., happy-tiger-42)"
+      },
+      "ownerPhone": {
+        "type": "string",
+        "description": "The caller's phone number for future lookups"
+      },
+      "ownerLanguage": {
+        "type": "string",
+        "description": "'en' for English or 'es' for Spanish",
+        "enum": ["en", "es"]
+      }
+    },
+    "required": ["businessName", "industry", "mainOffering", "editPin", "editPassphrase", "ownerPhone"]
+  },
+  "server": {
+    "url": "https://speakyour.site/api/generate-site"
+  }
+}
+```
 
 ### editSite
 Use your existing editSite/preview-edit tool configuration.

@@ -115,7 +115,10 @@ export async function POST(request) {
         owner_language: requirements.ownerLanguage || 'en',
         owner_phone: ownerPhone,
         edit_pin: editPin,
-        edit_passphrase: editPassphrase
+        edit_passphrase: editPassphrase,
+        // Address and location fields
+        has_physical_location: requirements.hasPhysicalLocation || false,
+        business_address: requirements.businessAddress || null
       })
       .select()
       .single()
@@ -184,6 +187,30 @@ export async function POST(request) {
 
 // This function builds a detailed prompt for Gemini
 function buildWebsitePrompt(requirements) {
+  // Build location section if address is provided
+  let locationSection = ''
+  if (requirements.hasPhysicalLocation && requirements.businessAddress) {
+    const addr = requirements.businessAddress
+    const fullAddress = addr.fullAddress ||
+      `${addr.street || ''}, ${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}`.trim()
+
+    locationSection = `
+PHYSICAL LOCATION:
+- Address: ${fullAddress}
+- This is a physical storefront/location that customers visit
+- IMPORTANT: Include the full address prominently in the Contact section
+- Add a "Get Directions" button/link that opens Google Maps: https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}
+- Consider mentioning the location in the hero or about section to establish local presence
+`
+  } else {
+    locationSection = `
+BUSINESS TYPE:
+- This is a service-based or online business without a physical storefront
+- Do NOT include a physical address in the contact section
+- Focus on phone, email, and contact form for customer inquiries
+`
+  }
+
   return `Create a complete, production-ready single-page marketing website.
 
 BUSINESS DETAILS:
@@ -195,7 +222,7 @@ BUSINESS DETAILS:
 - Call to Action: ${requirements.callToAction || 'Contact us today'}
 - Color Preference: ${requirements.colorPreference || 'Professional blue'}
 - Tone/Style: ${requirements.tone || 'Professional and friendly'}
-
+${locationSection}
 ADDITIONAL DETAILS:
 ${requirements.additionalInfo || 'None provided'}
 
