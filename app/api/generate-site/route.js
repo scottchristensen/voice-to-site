@@ -94,6 +94,15 @@ export async function POST(request) {
 
     console.log('Generated HTML length:', cleanedHtml.length)
 
+    // Use user-provided PIN/passphrase if available, otherwise generate defaults
+    const editPin = requirements.editPin || Math.floor(1000 + Math.random() * 9000).toString()
+    const editPassphrase = requirements.editPassphrase || generatePassphrase()
+
+    // Normalize phone number if provided
+    const ownerPhone = requirements.ownerPhone
+      ? requirements.ownerPhone.replace(/\D/g, '').replace(/^1/, '')
+      : null
+
     // Save to Supabase
     const { data, error } = await supabase
       .from('generated_sites')
@@ -103,7 +112,10 @@ export async function POST(request) {
         requirements: requirements,
         html_code: cleanedHtml,
         status: 'preview',
-        owner_language: requirements.ownerLanguage || 'en'
+        owner_language: requirements.ownerLanguage || 'en',
+        owner_phone: ownerPhone,
+        edit_pin: editPin,
+        edit_passphrase: editPassphrase
       })
       .select()
       .single()
@@ -129,10 +141,15 @@ export async function POST(request) {
 
     // Return response in appropriate format
     if (isVapiRequest) {
+      // For phone callers, they already set their own credentials, just remind them
+      const securityReminder = ownerPhone
+        ? ` Remember, you can use your PIN or password phrase to make changes over the phone anytime.`
+        : ''
+
       return Response.json({
         results: [{
           toolCallId: toolCallId,
-          result: `Great news! Your website is ready! You can view it at: ${previewUrl}`
+          result: `Great news! Your website is ready! You can view it at: ${previewUrl}${securityReminder}`
         }]
       }, { status: 200 })
     }
@@ -140,7 +157,9 @@ export async function POST(request) {
     return Response.json({
       success: true,
       previewUrl: previewUrl,
-      siteId: data.id
+      siteId: data.id,
+      editPin: editPin,
+      editPassphrase: editPassphrase
     })
 
   } catch (error) {
@@ -230,4 +249,26 @@ DARK MODE IMPLEMENTATION:
   }
 
 OUTPUT ONLY THE HTML CODE - no explanations, no markdown, just the complete HTML file starting with <!DOCTYPE html>`
+}
+
+// Generate a memorable passphrase for voice authentication
+function generatePassphrase() {
+  const adjectives = [
+    'happy', 'sunny', 'bright', 'golden', 'silver', 'cosmic', 'mighty', 'swift',
+    'gentle', 'brave', 'calm', 'clever', 'eager', 'fancy', 'grand', 'jolly',
+    'kind', 'lucky', 'merry', 'noble', 'proud', 'quick', 'royal', 'shiny',
+    'super', 'vivid', 'warm', 'wise', 'zesty', 'cool', 'fresh', 'bold'
+  ]
+  const nouns = [
+    'tiger', 'eagle', 'river', 'mountain', 'forest', 'ocean', 'sunset', 'rainbow',
+    'dolphin', 'falcon', 'garden', 'harbor', 'island', 'jasper', 'meadow', 'phoenix',
+    'sapphire', 'thunder', 'voyage', 'willow', 'breeze', 'canyon', 'crystal', 'dragon',
+    'ember', 'flame', 'glacier', 'horizon', 'lantern', 'maple', 'orchid', 'pearl'
+  ]
+
+  const adj = adjectives[Math.floor(Math.random() * adjectives.length)]
+  const noun = nouns[Math.floor(Math.random() * nouns.length)]
+  const num = Math.floor(10 + Math.random() * 90) // 10-99
+
+  return `${adj}-${noun}-${num}`
 }
