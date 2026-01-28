@@ -20,6 +20,14 @@ const translations = {
     expiredText: (name) => `This website preview for <strong>${name || 'your business'}</strong> has expired. But don't worry - you can create a new one in minutes!`,
     createNewSite: 'Create a New Site',
     claimBeforeGone: 'Or claim this exact design before it\'s gone forever',
+    translatingStatuses: [
+      'Analyzing your content...',
+      'Translating text elements...',
+      'Adapting layout for Spanish...',
+      'Updating navigation...',
+      'Polishing final details...',
+      'Almost there...',
+    ],
   },
   es: {
     sitePreview: 'Tu sitio',
@@ -33,6 +41,14 @@ const translations = {
     expiredText: (name) => `La vista previa del sitio web para <strong>${name || 'tu negocio'}</strong> ha expirado. ¡Pero no te preocupes, puedes crear uno nuevo en minutos!`,
     createNewSite: 'Crear un Nuevo Sitio',
     claimBeforeGone: 'O reclama este diseño exacto antes de que desaparezca para siempre',
+    translatingStatuses: [
+      'Analizando tu contenido...',
+      'Traduciendo elementos de texto...',
+      'Adaptando diseño al español...',
+      'Actualizando navegación...',
+      'Puliendo detalles finales...',
+      'Casi listo...',
+    ],
   }
 }
 
@@ -70,6 +86,7 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
   const [htmlEn, setHtmlEn] = useState(site.html_code)
   const [htmlEs, setHtmlEs] = useState(site.html_code_es || null)
   const [isTranslating, setIsTranslating] = useState(false)
+  const [translatingStatusIndex, setTranslatingStatusIndex] = useState(0)
   // Default to site's owner_language, then localStorage, then 'en'
   const [language, setLanguage] = useState(() => site.owner_language || 'en')
   const isMobile = useIsMobile()
@@ -106,6 +123,18 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
 
     return () => clearInterval(timer)
   }, [site.created_at, isPaid, isExpired])
+
+  // Rotating status messages for translation
+  useEffect(() => {
+    if (!isTranslating) {
+      setTranslatingStatusIndex(0)
+      return
+    }
+    const interval = setInterval(() => {
+      setTranslatingStatusIndex(prev => (prev + 1) % t.translatingStatuses.length)
+    }, 2500)
+    return () => clearInterval(interval)
+  }, [isTranslating, t.translatingStatuses.length])
 
   const handleEditComplete = (newHtml, remaining) => {
     // Update the appropriate language version
@@ -350,7 +379,7 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
               <div style={styles.translatingCard}>
                 <div style={{...styles.translatingSpinner, ...(isDarkMode && styles.translatingSpinnerDark)}} />
                 <p style={{...styles.translatingText, ...(isDarkMode && styles.translatingTextDark)}}>
-                  {language === 'es' ? 'Generando versión en español...' : 'Generating Spanish version...'}
+                  {t.translatingStatuses[translatingStatusIndex]}
                 </p>
               </div>
             </div>
