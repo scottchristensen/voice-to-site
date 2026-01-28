@@ -38,24 +38,18 @@ export async function POST(request) {
       })
     }
 
-    // Get the requirements from the stored data
-    const requirements = site.requirements || {
-      businessName: site.business_name,
-      industry: site.industry
-    }
-
     // Initialize Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
       generationConfig: {
-        temperature: 0.7,
+        temperature: 0.3, // Lower temperature for more consistent translation
         maxOutputTokens: 32000,
       }
     })
 
-    // Build the prompt for Spanish version
-    const prompt = buildSpanishWebsitePrompt(requirements)
+    // Build the prompt for translation (not regeneration)
+    const prompt = buildTranslationPrompt(site.html_code, targetLanguage)
 
     console.log(`Generating Spanish version for site ${siteId}...`)
     const result = await model.generateContent(prompt)
@@ -92,53 +86,45 @@ export async function POST(request) {
   }
 }
 
-function buildSpanishWebsitePrompt(requirements) {
-  return `Create a complete, production-ready single-page marketing website IN SPANISH.
+function buildTranslationPrompt(htmlCode, targetLanguage) {
+  const langName = targetLanguage === 'es' ? 'Spanish' : 'English'
+  const langToggleText = targetLanguage === 'es' ? '🇺🇸 English' : '🇪🇸 Español'
+  const langToggleLink = targetLanguage === 'es' ? '?lang=en' : '?lang=es'
 
-IMPORTANT: All text content must be in SPANISH. This is for Spanish-speaking customers.
+  return `You are a website translator. Your task is to translate ONLY the text content of this HTML website to ${langName}.
 
-BUSINESS DETAILS:
-- Business Name: ${requirements.businessName || 'Mi Negocio'}
-- Industry: ${requirements.industry || 'General'}
-- Main Service/Product: ${requirements.mainOffering || 'Servicios profesionales'}
-- Target Audience: ${requirements.targetAudience || 'Público general'}
-- Unique Value Proposition: ${requirements.valueProposition || 'Calidad y confiabilidad'}
-- Call to Action: ${requirements.callToAction || 'Contáctenos hoy'}
-- Color Preference: ${requirements.colorPreference || 'Professional blue'}
-- Tone/Style: ${requirements.tone || 'Professional and friendly'}
+CRITICAL INSTRUCTIONS:
+1. DO NOT change the HTML structure, layout, or design in ANY way
+2. DO NOT modify CSS styles, colors, fonts, spacing, or any visual properties
+3. DO NOT change image URLs or any src/href attributes (except language toggle)
+4. DO NOT add, remove, or rearrange any HTML elements
+5. ONLY translate the visible text content (headings, paragraphs, button text, labels, etc.)
+6. Keep the business name as-is (do not translate proper nouns)
+7. Preserve all HTML tags, attributes, classes, and IDs exactly as they are
+8. If there's a language toggle link, update it to say "${langToggleText}" and link to "${langToggleLink}"
 
-ADDITIONAL DETAILS:
-${requirements.additionalInfo || 'None provided'}
+TRANSLATION GUIDELINES:
+- Translate naturally, not word-for-word
+- Keep the same tone and style as the original
+- Common translations:
+  - "Learn More" → "Más Información"
+  - "Contact Us" → "Contáctenos"
+  - "Get Started" → "Comenzar"
+  - "About Us" → "Sobre Nosotros"
+  - "Services" → "Servicios"
+  - "Testimonials" → "Testimonios"
+  - "Contact" → "Contacto"
+  - "Submit" → "Enviar"
+  - "Name" → "Nombre"
+  - "Email" → "Correo Electrónico"
+  - "Message" → "Mensaje"
+  - "Phone" → "Teléfono"
+  - "Home" → "Inicio"
+  - "About" → "Nosotros"
 
-REQUIREMENTS:
-1. Create a COMPLETE, standalone HTML file with embedded CSS and minimal JavaScript
-2. ALL TEXT MUST BE IN SPANISH - headings, paragraphs, buttons, navigation, footer, everything
-3. Make it mobile-responsive using CSS media queries
-4. Use a modern, clean design with good typography (use Google Fonts like Inter or Poppins)
-5. Include these sections: Hero (Inicio), About/Services (Servicios), Features/Benefits (Beneficios), Testimonials (Testimonios), Contact/CTA (Contacto)
-6. Use placeholder images from https://placehold.co (e.g., https://placehold.co/600x400/1a1a2e/ffffff?text=Imagen+Principal)
-7. Include smooth scroll behavior for navigation links
-8. Make the color scheme match: ${requirements.colorPreference || 'professional blue'} - use a cohesive palette
-9. Add subtle hover animations and transitions for polish
-10. Include proper meta tags for SEO with Spanish content (title, description, viewport)
-11. The design should look premium, modern, and professional
-12. Include a sticky/fixed navigation header
-13. Add a footer with social media placeholder links
-14. Include a language toggle link in the header that says "🇺🇸 English" linking to "?lang=en"
+HERE IS THE HTML TO TRANSLATE:
 
-SPANISH TRANSLATIONS TO USE:
-- "Learn More" → "Más Información"
-- "Contact Us" → "Contáctenos"
-- "Get Started" → "Comenzar"
-- "About Us" → "Sobre Nosotros"
-- "Services" → "Servicios"
-- "Testimonials" → "Testimonios"
-- "Contact" → "Contacto"
-- "Submit" → "Enviar"
-- "Name" → "Nombre"
-- "Email" → "Correo Electrónico"
-- "Message" → "Mensaje"
-- "Phone" → "Teléfono"
+${htmlCode}
 
-OUTPUT ONLY THE HTML CODE - no explanations, no markdown, just the complete HTML file starting with <!DOCTYPE html>`
+OUTPUT ONLY THE TRANSLATED HTML CODE - no explanations, no markdown code blocks, just the complete HTML starting with <!DOCTYPE html> (or the existing doctype)`
 }
