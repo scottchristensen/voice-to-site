@@ -180,19 +180,54 @@ BUSINESS DETAILS:
 ADDITIONAL DETAILS:
 ${requirements.additionalInfo || 'None provided'}
 
-REQUIREMENTS:
-1. Create a COMPLETE, standalone HTML file with embedded CSS and minimal JavaScript
-2. Make it mobile-responsive using CSS media queries
-3. Use a modern, clean design with good typography (use Google Fonts like Inter or Poppins)
-4. Include these sections: Hero, About/Services, Features/Benefits, Testimonials (use realistic placeholder text), Contact/CTA
-5. Use placeholder images from https://placehold.co (e.g., https://placehold.co/600x400/1a1a2e/ffffff?text=Hero+Image)
-6. Include smooth scroll behavior for navigation links
-7. Make the color scheme match: ${requirements.colorPreference || 'professional blue'} - use a cohesive palette
-8. Add subtle hover animations and transitions for polish
-9. Include proper meta tags for SEO (title, description, viewport)
-10. The design should look premium, modern, and professional - not like a generic template
-11. Include a sticky/fixed navigation header with a language toggle link that says "🇪🇸 Español" linking to "?lang=es" (positioned on the right side of the nav)
-12. Add a footer with social media placeholder links
+CRITICAL REQUIREMENTS:
+1. This MUST be a SINGLE-PAGE landing page - NO multi-page navigation, NO links to other pages
+2. ALL navigation links MUST be anchor links (e.g., href="#about", href="#services", href="#contact") that scroll within the same page
+3. ALL call-to-action buttons (CTAs) MUST link to the contact form section (href="#contact") unless the user specifically requested otherwise
+4. Include BOTH light mode and dark mode styles using CSS @media (prefers-color-scheme: dark) - the site should automatically adapt to the user's operating system preference
+
+DESIGN REQUIREMENTS:
+5. Create a COMPLETE, standalone HTML file with embedded CSS and minimal JavaScript
+6. Make it mobile-responsive using CSS media queries
+7. Use a modern, clean design with good typography (use Google Fonts like Inter or Poppins)
+8. Include these sections with proper id attributes for anchor linking:
+   - Hero section (id="hero")
+   - About/Services section (id="about" or id="services")
+   - Features/Benefits section (id="features")
+   - Testimonials section (id="testimonials") with realistic placeholder text
+   - Contact form section (id="contact") with a working form layout
+9. Use placeholder images from https://placehold.co (e.g., https://placehold.co/600x400/1a1a2e/ffffff?text=Hero+Image)
+10. Include smooth scroll behavior: html { scroll-behavior: smooth; }
+11. Make the color scheme match: ${requirements.colorPreference || 'professional blue'} - use a cohesive palette for BOTH light and dark modes
+12. Add subtle hover animations and transitions for polish
+13. Include proper meta tags for SEO (title, description, viewport)
+14. The design should look premium, modern, and professional - not like a generic template
+15. Include a sticky/fixed navigation header with:
+    - Logo/business name on the left
+    - Nav links (all anchor links) in the center or right
+    - A language toggle link that says "🇪🇸 Español" linking to "?lang=es" (positioned on the far right)
+16. Add a footer with:
+    - Social media placeholder links
+    - Copyright text: "© 2026 ${requirements.businessName || 'Business Name'}. All rights reserved."
+
+DARK MODE IMPLEMENTATION:
+- Define CSS custom properties (variables) for colors at :root level
+- Override those variables inside @media (prefers-color-scheme: dark) { :root { ... } }
+- Use these variables throughout the CSS for backgrounds, text colors, borders, etc.
+- Ensure good contrast and readability in both modes
+- Example structure:
+  :root {
+    --bg-primary: #ffffff;
+    --text-primary: #1a1a2e;
+    /* etc */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1a1a2e;
+      --text-primary: #f5f5f5;
+      /* etc */
+    }
+  }
 
 OUTPUT ONLY THE HTML CODE - no explanations, no markdown, just the complete HTML file starting with <!DOCTYPE html>`
 }
