@@ -138,8 +138,9 @@ export async function middleware(request) {
       )
     }
 
-    // Rewrite to the site render route
+    // Rewrite to the site render route (preserving query params like ?lang=es)
     url.pathname = `/site/${data.siteId}`
+    // Query params (like ?lang=es) are automatically preserved
     return NextResponse.rewrite(url)
 
   } catch (error) {

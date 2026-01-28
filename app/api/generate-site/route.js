@@ -191,7 +191,7 @@ REQUIREMENTS:
 8. Add subtle hover animations and transitions for polish
 9. Include proper meta tags for SEO (title, description, viewport)
 10. The design should look premium, modern, and professional - not like a generic template
-11. Include a sticky/fixed navigation header
+11. Include a sticky/fixed navigation header with a language toggle link that says "🇪🇸 Español" linking to "?lang=es" (positioned on the right side of the nav)
 12. Add a footer with social media placeholder links
 
 OUTPUT ONLY THE HTML CODE - no explanations, no markdown, just the complete HTML file starting with <!DOCTYPE html>`

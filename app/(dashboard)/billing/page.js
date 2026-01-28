@@ -45,36 +45,55 @@ export default async function BillingPage() {
         .subscription-card:hover {
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
         }
+        @media (prefers-color-scheme: dark) {
+          .billing-title { color: #e5e5e5 !important; }
+          .billing-subtitle { color: #999 !important; }
+          .billing-section-title { color: #e5e5e5 !important; }
+          .billing-summary-card { background: #1a1a1a !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important; }
+          .billing-summary-label { color: #888 !important; }
+          .billing-summary-value { color: #e5e5e5 !important; }
+          .billing-summary-divider { background: #333 !important; }
+          .subscription-card { background: #1a1a1a !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important; }
+          .subscription-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important; }
+          .billing-site-name { color: #e5e5e5 !important; }
+          .billing-price { color: #e5e5e5 !important; }
+          .billing-date-label { color: #888 !important; }
+          .billing-empty-state { background: #1a1a1a !important; }
+          .billing-empty-text { color: #888 !important; }
+          .billing-faq-item { background: #1a1a1a !important; }
+          .billing-faq-question { color: #e5e5e5 !important; }
+          .billing-faq-answer { color: #999 !important; }
+        }
       `}</style>
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>Billing</h1>
-          <p style={styles.subtitle}>Manage your subscriptions and payment methods</p>
+          <h1 className="billing-title" style={styles.title}>Billing</h1>
+          <p className="billing-subtitle" style={styles.subtitle}>Manage your subscriptions and payment methods</p>
         </div>
 
       {/* Summary Card */}
-      <div style={styles.summaryCard}>
+      <div className="billing-summary-card" style={styles.summaryCard}>
         <div style={styles.summaryItem}>
-          <span style={styles.summaryLabel}>Active Subscriptions</span>
-          <span style={styles.summaryValue}>{sites?.length || 0}</span>
+          <span className="billing-summary-label" style={styles.summaryLabel}>Active Subscriptions</span>
+          <span className="billing-summary-value" style={styles.summaryValue}>{sites?.length || 0}</span>
         </div>
-        <div style={styles.summaryDivider}></div>
+        <div className="billing-summary-divider" style={styles.summaryDivider}></div>
         <div style={styles.summaryItem}>
-          <span style={styles.summaryLabel}>Monthly Total</span>
-          <span style={styles.summaryValue}>${totalMonthly}/mo</span>
+          <span className="billing-summary-label" style={styles.summaryLabel}>Monthly Total</span>
+          <span className="billing-summary-value" style={styles.summaryValue}>${totalMonthly}/mo</span>
         </div>
       </div>
 
       {/* Subscriptions List */}
       <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Your Subscriptions</h2>
+        <h2 className="billing-section-title" style={styles.sectionTitle}>Your Subscriptions</h2>
 
         {sites && sites.length > 0 ? (
           <div style={styles.subscriptionsList}>
             {sites.map((site) => (
               <div key={site.id} className="subscription-card" style={styles.subscriptionCard}>
                 <div style={styles.subscriptionInfo}>
-                  <h3 style={styles.siteName}>{site.business_name || 'Untitled Site'}</h3>
+                  <h3 className="billing-site-name" style={styles.siteName}>{site.business_name || 'Untitled Site'}</h3>
                   <p style={styles.siteUrl}>{site.subdomain}.speakyour.site</p>
                 </div>
                 <div style={styles.subscriptionMeta}>
@@ -87,10 +106,10 @@ export default async function BillingPage() {
                   }}>
                     {site.subscription_status === 'active' ? 'Active' : site.subscription_status}
                   </span>
-                  <span style={styles.price}>${getPlanPrice(site.plan_tier || site.plan_type)}/mo</span>
+                  <span className="billing-price" style={styles.price}>${getPlanPrice(site.plan_tier || site.plan_type)}/mo</span>
                 </div>
                 <div style={styles.subscriptionDates}>
-                  <span style={styles.dateLabel}>
+                  <span className="billing-date-label" style={styles.dateLabel}>
                     Started: {site.claimed_at ? new Date(site.claimed_at).toLocaleDateString() : 'N/A'}
                   </span>
                 </div>
@@ -101,8 +120,8 @@ export default async function BillingPage() {
             ))}
           </div>
         ) : (
-          <div style={styles.emptyState}>
-            <p style={styles.emptyText}>No active subscriptions</p>
+          <div className="billing-empty-state" style={styles.emptyState}>
+            <p className="billing-empty-text" style={styles.emptyText}>No active subscriptions</p>
             <a href="/dashboard/new" className="create-link" style={styles.createLink}>Create your first site</a>
           </div>
         )}
@@ -110,23 +129,23 @@ export default async function BillingPage() {
 
       {/* FAQ Section */}
       <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Billing FAQ</h2>
+        <h2 className="billing-section-title" style={styles.sectionTitle}>Billing FAQ</h2>
         <div style={styles.faqList}>
-          <div style={styles.faqItem}>
-            <h4 style={styles.faqQuestion}>How do I cancel a subscription?</h4>
-            <p style={styles.faqAnswer}>
+          <div className="billing-faq-item" style={styles.faqItem}>
+            <h4 className="billing-faq-question" style={styles.faqQuestion}>How do I cancel a subscription?</h4>
+            <p className="billing-faq-answer" style={styles.faqAnswer}>
               Click "Manage Billing" above to access the Stripe customer portal where you can cancel any subscription.
             </p>
           </div>
-          <div style={styles.faqItem}>
-            <h4 style={styles.faqQuestion}>When will I be charged?</h4>
-            <p style={styles.faqAnswer}>
+          <div className="billing-faq-item" style={styles.faqItem}>
+            <h4 className="billing-faq-question" style={styles.faqQuestion}>When will I be charged?</h4>
+            <p className="billing-faq-answer" style={styles.faqAnswer}>
               You're charged monthly on the anniversary of when you claimed each site.
             </p>
           </div>
-          <div style={styles.faqItem}>
-            <h4 style={styles.faqQuestion}>What happens if I cancel?</h4>
-            <p style={styles.faqAnswer}>
+          <div className="billing-faq-item" style={styles.faqItem}>
+            <h4 className="billing-faq-question" style={styles.faqQuestion}>What happens if I cancel?</h4>
+            <p className="billing-faq-answer" style={styles.faqAnswer}>
               Your site will remain active until the end of your billing period, then it will be taken offline.
             </p>
           </div>

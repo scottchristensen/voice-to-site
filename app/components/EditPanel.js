@@ -55,7 +55,8 @@ export default function EditPanel({
   editsRemaining,
   onEditComplete,
   onLimitReached,
-  language = 'en'
+  language = 'en',
+  isDarkMode = false
 }) {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
@@ -152,17 +153,18 @@ export default function EditPanel({
   return (
     <div style={{
       ...styles.panel,
+      ...(isDarkMode && styles.panelDark),
       transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
     }}>
       {/* Header */}
-      <div style={styles.header}>
+      <div style={{...styles.header, ...(isDarkMode && styles.headerDark)}}>
         <div style={styles.headerLeft}>
-          <h3 style={styles.title}>{t.editYourSite}</h3>
-          <span style={styles.editsBadge}>
+          <h3 style={{...styles.title, ...(isDarkMode && styles.titleDark)}}>{t.editYourSite}</h3>
+          <span style={{...styles.editsBadge, ...(isDarkMode && styles.editsBadgeDark)}}>
             {t.editsRemaining(editsRemaining)}
           </span>
         </div>
-        <button onClick={onClose} style={styles.closeButton}>
+        <button onClick={onClose} style={{...styles.closeButton, ...(isDarkMode && styles.closeButtonDark)}}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
@@ -173,11 +175,11 @@ export default function EditPanel({
       <div style={styles.messages}>
         {messages.length === 0 && (
           <div style={styles.emptyState}>
-            <p style={styles.emptyTitle}>{t.whatToChange}</p>
-            <p style={styles.emptyText}>
+            <p style={{...styles.emptyTitle, ...(isDarkMode && styles.emptyTitleDark)}}>{t.whatToChange}</p>
+            <p style={{...styles.emptyText, ...(isDarkMode && styles.emptyTextDark)}}>
               {t.tryThingsLike}
             </p>
-            <ul style={styles.exampleList}>
+            <ul style={{...styles.exampleList, ...(isDarkMode && styles.exampleListDark)}}>
               <li>{t.example1}</li>
               <li>{t.example2}</li>
               <li>{t.example3}</li>
@@ -189,7 +191,7 @@ export default function EditPanel({
             key={i}
             style={{
               ...styles.message,
-              ...(msg.role === 'user' ? styles.userMessage : styles.assistantMessage),
+              ...(msg.role === 'user' ? styles.userMessage : {...styles.assistantMessage, ...(isDarkMode && styles.assistantMessageDark)}),
               ...(msg.error ? styles.errorMessage : {}),
               ...(msg.success ? styles.successMessage : {})
             }}
@@ -201,7 +203,7 @@ export default function EditPanel({
           </div>
         ))}
         {isLoading && (
-          <div style={{ ...styles.message, ...styles.assistantMessage }}>
+          <div style={{ ...styles.message, ...styles.assistantMessage, ...(isDarkMode && styles.assistantMessageDark) }}>
             {t.loadingStatuses[loadingStatusIndex]}
           </div>
         )}
@@ -209,14 +211,14 @@ export default function EditPanel({
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} style={styles.inputForm}>
+      <form onSubmit={handleSubmit} style={{...styles.inputForm, ...(isDarkMode && styles.inputFormDark)}}>
         <input
           ref={inputRef}
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder={t.describeEdit}
-          style={styles.input}
+          style={{...styles.input, ...(isDarkMode && styles.inputDark)}}
           disabled={isLoading}
         />
         <button
@@ -390,5 +392,45 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     transition: 'opacity 0.2s',
+  },
+  // Dark mode variants
+  panelDark: {
+    background: '#111111',
+    borderRight: '1px solid #2a2a2a',
+  },
+  headerDark: {
+    borderBottom: '1px solid #2a2a2a',
+  },
+  titleDark: {
+    color: '#e5e5e5',
+  },
+  editsBadgeDark: {
+    color: '#a5b4fc',
+    background: '#1e1b4b',
+  },
+  closeButtonDark: {
+    color: '#9ca3af',
+  },
+  emptyTitleDark: {
+    color: '#e5e5e5',
+  },
+  emptyTextDark: {
+    color: '#9ca3af',
+  },
+  exampleListDark: {
+    background: '#1a1a1a',
+    color: '#9ca3af',
+  },
+  assistantMessageDark: {
+    background: '#1f1f1f',
+    color: '#e5e5e5',
+  },
+  inputFormDark: {
+    borderTop: '1px solid #2a2a2a',
+  },
+  inputDark: {
+    background: '#1a1a1a',
+    border: '1px solid #2a2a2a',
+    color: '#e5e5e5',
   },
 }

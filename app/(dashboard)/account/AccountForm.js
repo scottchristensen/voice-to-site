@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { useDarkMode } from '@/app/hooks/useDarkMode'
 
 export default function AccountForm({ user }) {
   const [fullName, setFullName] = useState(user.user_metadata?.full_name || '')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
+  const isDarkMode = useDarkMode()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -35,13 +37,13 @@ export default function AccountForm({ user }) {
   return (
     <form onSubmit={handleSubmit}>
       <div style={styles.formGroup}>
-        <label style={styles.label}>Full Name</label>
+        <label style={{...styles.label, ...(isDarkMode && styles.labelDark)}}>Full Name</label>
         <input
           type="text"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           placeholder="Your name"
-          style={styles.input}
+          style={{...styles.input, ...(isDarkMode && styles.inputDark)}}
         />
       </div>
 
@@ -103,5 +105,14 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500',
     cursor: 'pointer',
+  },
+  // Dark mode variants
+  labelDark: {
+    color: '#e5e5e5',
+  },
+  inputDark: {
+    background: '#0a0a0a',
+    border: '1px solid #333',
+    color: '#e5e5e5',
   },
 }

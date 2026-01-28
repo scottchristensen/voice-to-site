@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import ClaimModal from './ClaimModal'
 import EditPanel from './EditPanel'
 import EditSheet from './EditSheet'
+import { useDarkMode } from '../hooks/useDarkMode'
 
 // UI Translations
 const translations = {
@@ -66,10 +67,16 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
   const [timeLeft, setTimeLeft] = useState(() => getTimeRemaining(site.created_at))
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false)
   const [editsRemaining, setEditsRemaining] = useState(5 - (site.preview_edits_used || 0))
-  const [currentHtml, setCurrentHtml] = useState(site.html_code)
+  const [htmlEn, setHtmlEn] = useState(site.html_code)
+  const [htmlEs, setHtmlEs] = useState(site.html_code_es || null)
+  const [isTranslating, setIsTranslating] = useState(false)
   // Default to site's owner_language, then localStorage, then 'en'
   const [language, setLanguage] = useState(() => site.owner_language || 'en')
   const isMobile = useIsMobile()
+  const isDarkMode = useDarkMode()
+
+  // Compute current HTML based on language
+  const currentHtml = language === 'es' && htmlEs ? htmlEs : htmlEn
 
   // Load language preference - prefer site's owner_language, then localStorage
   useEffect(() => {
@@ -101,8 +108,50 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
   }, [site.created_at, isPaid, isExpired])
 
   const handleEditComplete = (newHtml, remaining) => {
-    setCurrentHtml(newHtml)
+    // Update the appropriate language version
+    if (language === 'es') {
+      setHtmlEs(newHtml)
+    } else {
+      setHtmlEn(newHtml)
+    }
     setEditsRemaining(remaining)
+  }
+
+  // Handle language toggle with lazy Spanish generation
+  const handleLanguageChange = async (newLang) => {
+    if (newLang === language) return
+
+    if (newLang === 'es' && !htmlEs) {
+      // Need to generate Spanish version
+      setIsTranslating(true)
+      setLanguage(newLang) // Switch immediately to show loading state
+
+      try {
+        const response = await fetch('/api/translate-site', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siteId: site.id, targetLanguage: 'es' })
+        })
+
+        const result = await response.json()
+
+        if (result.success) {
+          setHtmlEs(result.html)
+        } else {
+          // Revert to English on error
+          setLanguage('en')
+          console.error('Translation failed:', result.error)
+        }
+      } catch (error) {
+        // Revert to English on error
+        setLanguage('en')
+        console.error('Translation error:', error)
+      } finally {
+        setIsTranslating(false)
+      }
+    } else {
+      setLanguage(newLang)
+    }
   }
 
   const handleLimitReached = () => {
@@ -113,17 +162,17 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
   // Expired site view
   if (isExpired) {
     return (
-      <div style={styles.container}>
+      <div style={{...styles.container, ...(isDarkMode && { background: '#0a0a0a' })}}>
         {/* Language Toggle for expired view */}
         <div style={styles.expiredLangToggle}>
-          <div style={styles.langToggleContainer}>
-            <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
+          <div style={{...styles.langToggleContainer, ...(isDarkMode && styles.langToggleContainerDark)}}>
+            <button onClick={() => handleLanguageChange('en')} style={{...styles.langToggleBtn, ...(isDarkMode && styles.langToggleBtnDark), ...(language === 'en' ? (isDarkMode ? styles.langToggleBtnActiveDark : styles.langToggleBtnActive) : {})}}>
               🇺🇸 EN
             </button>
-            <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
+            <button onClick={() => handleLanguageChange('es')} style={{...styles.langToggleBtn, ...(isDarkMode && styles.langToggleBtnDark), ...(language === 'es' ? (isDarkMode ? styles.langToggleBtnActiveDark : styles.langToggleBtnActive) : {})}}>
               🇪🇸 ES
             </button>
-            <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
+            <div style={{...styles.langToggleSlider, ...(isDarkMode && styles.langToggleSliderDark), transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
           </div>
         </div>
 
@@ -168,7 +217,7 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
 
   // Active preview view
   return (
-    <div className="outer-wrapper" style={styles.outerWrapper}>
+    <div className="outer-wrapper" style={{...styles.outerWrapper, ...(isDarkMode && styles.outerWrapperDark)}}>
       {/* Compact Header for Unpaid Sites */}
       {!isPaid && (
         <>
@@ -176,6 +225,9 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
             html, body {
               margin: 0;
               padding: 0;
+            }
+            @keyframes spin {
+              to { transform: rotate(360deg); }
             }
             @media (max-width: 640px) {
               .outer-wrapper {
@@ -204,7 +256,7 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
           `}</style>
           <div className="header-row" style={styles.header}>
             <div className="header-title" style={styles.headerTextWrapper}>
-              <span style={styles.headerText}>{t.sitePreview}</span>
+              <span style={{...styles.headerText, ...(isDarkMode && styles.headerTextDark)}}>{t.sitePreview}</span>
             </div>
             {/* Urgency Badge - two lines */}
             <span className="urgency-badge" style={styles.urgencyBadge}>
@@ -218,14 +270,14 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
               )}
             </span>
             {/* Language Toggle - on right */}
-            <div className="lang-toggle" style={styles.langToggleContainer}>
-              <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
+            <div className="lang-toggle" style={{...styles.langToggleContainer, ...(isDarkMode && styles.langToggleContainerDark)}}>
+              <button onClick={() => handleLanguageChange('en')} style={{...styles.langToggleBtn, ...(isDarkMode && styles.langToggleBtnDark), ...(language === 'en' ? (isDarkMode ? styles.langToggleBtnActiveDark : styles.langToggleBtnActive) : {})}}>
                 🇺🇸 EN
               </button>
-              <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
+              <button onClick={() => handleLanguageChange('es')} style={{...styles.langToggleBtn, ...(isDarkMode && styles.langToggleBtnDark), ...(language === 'es' ? (isDarkMode ? styles.langToggleBtnActiveDark : styles.langToggleBtnActive) : {})}}>
                 🇪🇸 ES
               </button>
-              <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
+              <div style={{...styles.langToggleSlider, ...(isDarkMode && styles.langToggleSliderDark), transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
             </div>
             <button
               className="claim-cta-btn"
@@ -243,14 +295,14 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
         <div style={styles.successHeader}>
           <span>&#10003; {t.siteIsLive}</span>
           {/* Language Toggle for paid sites */}
-          <div style={styles.langToggleContainer}>
-            <button onClick={() => setLanguage('en')} style={{...styles.langToggleBtn, ...(language === 'en' ? styles.langToggleBtnActive : {})}}>
+          <div style={{...styles.langToggleContainer, ...(isDarkMode && styles.langToggleContainerDark)}}>
+            <button onClick={() => handleLanguageChange('en')} style={{...styles.langToggleBtn, ...(isDarkMode && styles.langToggleBtnDark), ...(language === 'en' ? (isDarkMode ? styles.langToggleBtnActiveDark : styles.langToggleBtnActive) : {})}}>
               🇺🇸 EN
             </button>
-            <button onClick={() => setLanguage('es')} style={{...styles.langToggleBtn, ...(language === 'es' ? styles.langToggleBtnActive : {})}}>
+            <button onClick={() => handleLanguageChange('es')} style={{...styles.langToggleBtn, ...(isDarkMode && styles.langToggleBtnDark), ...(language === 'es' ? (isDarkMode ? styles.langToggleBtnActiveDark : styles.langToggleBtnActive) : {})}}>
               🇪🇸 ES
             </button>
-            <div style={{...styles.langToggleSlider, transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
+            <div style={{...styles.langToggleSlider, ...(isDarkMode && styles.langToggleSliderDark), transform: language === 'es' ? 'translateX(100%)' : 'translateX(0)'}} />
           </div>
           {site.subdomain && (
             <a
@@ -277,6 +329,7 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
             onEditComplete={handleEditComplete}
             onLimitReached={handleLimitReached}
             language={language}
+            isDarkMode={isDarkMode}
           />
         )}
 
@@ -290,6 +343,18 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
             style={styles.iframe}
             title="Website Preview"
           />
+
+          {/* Translation Loading Overlay */}
+          {isTranslating && (
+            <div style={{...styles.translatingOverlay, ...(isDarkMode && styles.translatingOverlayDark)}}>
+              <div style={styles.translatingCard}>
+                <div style={{...styles.translatingSpinner, ...(isDarkMode && styles.translatingSpinnerDark)}} />
+                <p style={{...styles.translatingText, ...(isDarkMode && styles.translatingTextDark)}}>
+                  {language === 'es' ? 'Generando versión en español...' : 'Generating Spanish version...'}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* FAB - Floating Action Button for Edit */}
           {!isPaid && !isEditPanelOpen && (
@@ -318,6 +383,7 @@ export default function PreviewClient({ site, daysRemaining, isPaid, isExpired }
           onEditComplete={handleEditComplete}
           onLimitReached={handleLimitReached}
           language={language}
+          isDarkMode={isDarkMode}
         />
       )}
 
@@ -612,5 +678,65 @@ const styles = {
     color: '#555',
     lineHeight: '1.6',
     marginBottom: '24px',
+  },
+  // Translation loading overlay
+  translatingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(255, 255, 255, 0.9)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 40,
+  },
+  translatingCard: {
+    textAlign: 'center',
+    padding: '32px',
+  },
+  translatingSpinner: {
+    width: '48px',
+    height: '48px',
+    border: '4px solid #e5e7eb',
+    borderTopColor: '#2563eb',
+    borderRadius: '50%',
+    margin: '0 auto 16px',
+    animation: 'spin 1s linear infinite',
+  },
+  translatingText: {
+    fontSize: '16px',
+    fontWeight: '500',
+    color: '#374151',
+  },
+  // Dark mode variants
+  outerWrapperDark: {
+    background: '#0a0a0a',
+  },
+  headerTextDark: {
+    color: '#e5e5e5',
+  },
+  langToggleContainerDark: {
+    background: '#1f1f1f',
+  },
+  langToggleBtnDark: {
+    color: '#9ca3af',
+  },
+  langToggleBtnActiveDark: {
+    color: '#e5e5e5',
+  },
+  langToggleSliderDark: {
+    background: '#374151',
+  },
+  translatingOverlayDark: {
+    background: 'rgba(0, 0, 0, 0.9)',
+  },
+  translatingTextDark: {
+    color: '#e5e5e5',
+  },
+  translatingSpinnerDark: {
+    border: '4px solid #374151',
+    borderTopColor: '#3b82f6',
   },
 }

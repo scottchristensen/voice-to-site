@@ -2,10 +2,12 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useDarkMode } from '@/app/hooks/useDarkMode'
 
 function ClaimSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
+  const isDarkMode = useDarkMode()
 
   const [loading, setLoading] = useState(true)
   const [siteData, setSiteData] = useState(null)
@@ -42,9 +44,9 @@ function ClaimSuccessContent() {
   if (loading) {
     return (
       <div style={styles.container}>
-        <div style={styles.card}>
+        <div style={{...styles.card, ...(isDarkMode && styles.cardDark)}}>
           <div style={styles.spinner}></div>
-          <p style={styles.loadingText}>Setting up your site...</p>
+          <p style={{...styles.loadingText, ...(isDarkMode && styles.loadingTextDark)}}>Setting up your site...</p>
         </div>
       </div>
     )
@@ -53,11 +55,11 @@ function ClaimSuccessContent() {
   if (error || !siteData) {
     return (
       <div style={styles.container}>
-        <div style={styles.card}>
+        <div style={{...styles.card, ...(isDarkMode && styles.cardDark)}}>
           <div style={styles.icon}>!</div>
-          <h1 style={styles.title}>Something went wrong</h1>
-          <p style={styles.subtitle}>{error || 'Unable to verify your payment.'}</p>
-          <a href="/" style={styles.secondaryButton}>
+          <h1 style={{...styles.title, ...(isDarkMode && styles.titleDark)}}>Something went wrong</h1>
+          <p style={{...styles.subtitle, ...(isDarkMode && styles.subtitleDark)}}>{error || 'Unable to verify your payment.'}</p>
+          <a href="/" style={{...styles.secondaryButton, ...(isDarkMode && styles.secondaryButtonDark)}}>
             Go Home
           </a>
         </div>
@@ -69,10 +71,10 @@ function ClaimSuccessContent() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
+      <div style={{...styles.card, ...(isDarkMode && styles.cardDark)}}>
         <div style={styles.icon}>&#127881;</div>
-        <h1 style={styles.title}>Your Site is Live!</h1>
-        <p style={styles.subtitle}>
+        <h1 style={{...styles.title, ...(isDarkMode && styles.titleDark)}}>Your Site is Live!</h1>
+        <p style={{...styles.subtitle, ...(isDarkMode && styles.subtitleDark)}}>
           Congratulations! Your website for <strong>{siteData.businessName}</strong> is now live.
         </p>
 
@@ -80,13 +82,13 @@ function ClaimSuccessContent() {
           href={liveUrl}
           target="_blank"
           rel="noopener noreferrer"
-          style={styles.urlBox}
+          style={{...styles.urlBox, ...(isDarkMode && styles.urlBoxDark)}}
         >
           {liveUrl}
         </a>
 
         <div style={styles.shareSection}>
-          <p style={styles.shareLabel}>Share your new site</p>
+          <p style={{...styles.shareLabel, ...(isDarkMode && styles.shareLabelDark)}}>Share your new site</p>
           <div style={styles.shareButtons}>
             <button
               onClick={() => {
@@ -94,7 +96,7 @@ function ClaimSuccessContent() {
                 setCopied(true)
                 setTimeout(() => setCopied(false), 2000)
               }}
-              style={styles.shareButton}
+              style={{...styles.shareButton, ...(isDarkMode && styles.shareButtonDark)}}
               title="Copy link"
             >
               {copied ? (
@@ -112,7 +114,7 @@ function ClaimSuccessContent() {
               href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my new website for ${siteData.businessName}!`)}&url=${encodeURIComponent(liveUrl)}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={styles.shareButton}
+              style={{...styles.shareButton, ...(isDarkMode && styles.shareButtonDark)}}
               title="Share on X"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -123,7 +125,7 @@ function ClaimSuccessContent() {
               href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(liveUrl)}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={styles.shareButton}
+              style={{...styles.shareButton, ...(isDarkMode && styles.shareButtonDark)}}
               title="Share on Facebook"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -134,7 +136,7 @@ function ClaimSuccessContent() {
               href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(liveUrl)}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={styles.shareButton}
+              style={{...styles.shareButton, ...(isDarkMode && styles.shareButtonDark)}}
               title="Share on LinkedIn"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -143,7 +145,7 @@ function ClaimSuccessContent() {
             </a>
             <a
               href={`mailto:?subject=${encodeURIComponent(`Check out ${siteData.businessName}`)}&body=${encodeURIComponent(`I just created a website for ${siteData.businessName}! Check it out: ${liveUrl}`)}`}
-              style={styles.shareButton}
+              style={{...styles.shareButton, ...(isDarkMode && styles.shareButtonDark)}}
               title="Share via Email"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -158,12 +160,12 @@ function ClaimSuccessContent() {
           <a href={liveUrl} target="_blank" rel="noopener noreferrer" style={styles.primaryButton}>
             Visit Your Site
           </a>
-          <a href="/" style={styles.secondaryButton}>
+          <a href="/" style={{...styles.secondaryButton, ...(isDarkMode && styles.secondaryButtonDark)}}>
             Create Another Site
           </a>
         </div>
 
-        <p style={styles.note}>
+        <p style={{...styles.note, ...(isDarkMode && styles.noteDark)}}>
           A confirmation email has been sent to {siteData.email}.
         </p>
       </div>
@@ -301,5 +303,37 @@ const styles = {
   },
   loadingText: {
     color: '#666'
+  },
+  // Dark mode variants
+  cardDark: {
+    background: '#1a1a1a',
+    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.4)'
+  },
+  titleDark: {
+    color: '#e5e5e5'
+  },
+  subtitleDark: {
+    color: '#999'
+  },
+  urlBoxDark: {
+    background: '#0a0a0a',
+    color: '#a5b4fc'
+  },
+  shareLabelDark: {
+    color: '#999'
+  },
+  shareButtonDark: {
+    background: '#0a0a0a',
+    color: '#a5b4fc'
+  },
+  secondaryButtonDark: {
+    borderColor: '#a5b4fc',
+    color: '#a5b4fc'
+  },
+  noteDark: {
+    color: '#777'
+  },
+  loadingTextDark: {
+    color: '#999'
   }
 }

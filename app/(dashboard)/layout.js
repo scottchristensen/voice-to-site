@@ -35,8 +35,16 @@ export default async function DashboardLayout({ children }) {
             padding-top: 60px !important;
           }
         }
+        @media (prefers-color-scheme: dark) {
+          .dashboard-layout {
+            background: #0a0a0a !important;
+          }
+          .dashboard-main {
+            background: #0a0a0a !important;
+          }
+        }
       `}</style>
-      <div style={styles.layout}>
+      <div className="dashboard-layout" style={styles.layout}>
         <DashboardSidebar userEmail={user.email} />
         <main className="dashboard-main" style={styles.main}>
           {children}

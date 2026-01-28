@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import SiteCard from '../(dashboard)/dashboard/SiteCard'
+import { useDarkMode } from '../hooks/useDarkMode'
 
 export default function DashboardContent({ sites }) {
+  const isDarkMode = useDarkMode()
   // Initialize view mode from URL or localStorage
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -93,25 +95,42 @@ export default function DashboardContent({ sites }) {
             overflow-x: auto;
           }
         }
+        @media (prefers-color-scheme: dark) {
+          .table-action:hover {
+            background: #1f1f1f !important;
+            color: #a5b4fc !important;
+          }
+          .table-row:hover {
+            background: #1a1a1a !important;
+          }
+          .create-tile:hover {
+            border-color: #667eea !important;
+            background: #1a1a2e !important;
+          }
+          .create-row:hover {
+            background: #1a1a2e !important;
+          }
+        }
       `}</style>
       <div style={styles.pageWrapper}>
       {/* Header - Full Width */}
       <div className="dashboard-header" style={styles.headerWrapper}>
         <div style={styles.headerInner}>
           <div style={styles.headerLeft}>
-            <h1 style={styles.title}>My Sites</h1>
-            <p style={styles.subtitle}>Manage and edit your websites</p>
+            <h1 style={{...styles.title, ...(isDarkMode && { color: '#e5e5e5' })}}>My Sites</h1>
+            <p style={{...styles.subtitle, ...(isDarkMode && { color: '#9ca3af' })}}>Manage and edit your websites</p>
           </div>
         </div>
         <div className="header-right" style={styles.headerRight}>
           {/* View Toggle */}
-          <div style={styles.viewToggle}>
+          <div style={{...styles.viewToggle, ...(isDarkMode && { background: '#1f1f1f' })}}>
             <button
               onClick={() => setViewMode('tile')}
               className="view-toggle-btn"
               style={{
                 ...styles.viewToggleBtn,
-                ...(viewMode === 'tile' ? styles.viewToggleBtnActive : {})
+                ...(isDarkMode && { color: '#9ca3af' }),
+                ...(viewMode === 'tile' ? {...styles.viewToggleBtnActive, ...(isDarkMode && { background: '#374151', color: '#e5e5e5' })} : {})
               }}
               title="Tile view"
             >
@@ -122,7 +141,8 @@ export default function DashboardContent({ sites }) {
               className="view-toggle-btn"
               style={{
                 ...styles.viewToggleBtn,
-                ...(viewMode === 'table' ? styles.viewToggleBtnActive : {})
+                ...(isDarkMode && { color: '#9ca3af' }),
+                ...(viewMode === 'table' ? {...styles.viewToggleBtnActive, ...(isDarkMode && { background: '#374151', color: '#e5e5e5' })} : {})
               }}
               title="Table view"
             >
@@ -146,32 +166,32 @@ export default function DashboardContent({ sites }) {
         viewMode === 'tile' ? (
           <div className="sites-grid" style={styles.grid}>
             {sites.map((site) => (
-              <SiteCard key={site.id} site={site} />
+              <SiteCard key={site.id} site={site} isDarkMode={isDarkMode} />
             ))}
             {/* Create New Site Card */}
-            <a href="/dashboard/new" className="create-tile" style={styles.createTile}>
+            <a href="/dashboard/new" className="create-tile" style={{...styles.createTile, ...(isDarkMode && { background: '#111111', border: '2px dashed #374151' })}}>
               <div style={styles.createTileIcon}>
                 <PlusIconLarge />
               </div>
-              <span style={styles.createTileText}>Create new site</span>
+              <span style={{...styles.createTileText, ...(isDarkMode && { color: '#9ca3af' })}}>Create new site</span>
             </a>
           </div>
         ) : (
-          <div className="table-wrapper" style={styles.tableWrapper}>
+          <div className="table-wrapper" style={{...styles.tableWrapper, ...(isDarkMode && { background: '#111111', border: '1px solid #2a2a2a' })}}>
             <table style={styles.table}>
               <thead>
-                <tr style={styles.tableHeaderRow}>
-                  <th style={styles.tableHeader}>Site</th>
-                  <th style={styles.tableHeader}>Subdomain</th>
-                  <th style={styles.tableHeader}>Status</th>
-                  <th style={styles.tableHeader}>Created</th>
-                  <th style={styles.tableHeader}>Plan</th>
-                  <th style={styles.tableHeaderActions}>Actions</th>
+                <tr style={{...styles.tableHeaderRow, ...(isDarkMode && { background: '#1a1a1a', borderBottom: '1px solid #2a2a2a' })}}>
+                  <th style={{...styles.tableHeader, ...(isDarkMode && { color: '#9ca3af' })}}>Site</th>
+                  <th style={{...styles.tableHeader, ...(isDarkMode && { color: '#9ca3af' })}}>Subdomain</th>
+                  <th style={{...styles.tableHeader, ...(isDarkMode && { color: '#9ca3af' })}}>Status</th>
+                  <th style={{...styles.tableHeader, ...(isDarkMode && { color: '#9ca3af' })}}>Created</th>
+                  <th style={{...styles.tableHeader, ...(isDarkMode && { color: '#9ca3af' })}}>Plan</th>
+                  <th style={{...styles.tableHeaderActions, ...(isDarkMode && { color: '#9ca3af' })}}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {sites.map((site) => (
-                  <SiteTableRow key={site.id} site={site} />
+                  <SiteTableRow key={site.id} site={site} isDarkMode={isDarkMode} />
                 ))}
                 {/* Create New Site Row */}
                 <tr className="table-row create-row" style={styles.createTableRow}>
@@ -206,7 +226,7 @@ export default function DashboardContent({ sites }) {
   )
 }
 
-function SiteTableRow({ site }) {
+function SiteTableRow({ site, isDarkMode = false }) {
   const [isDuplicating, setIsDuplicating] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -259,8 +279,8 @@ function SiteTableRow({ site }) {
 
   return (
     <>
-      <tr className="table-row" style={styles.tableRow}>
-        <td style={styles.tableCell}>
+      <tr className="table-row" style={{...styles.tableRow, ...(isDarkMode && { borderBottom: '1px solid #2a2a2a' })}}>
+        <td style={{...styles.tableCell, ...(isDarkMode && { color: '#e5e5e5' })}}>
           <div style={styles.tableSiteInfo}>
             <div style={{
               ...styles.tableSiteAvatar,
@@ -268,7 +288,7 @@ function SiteTableRow({ site }) {
             }}>
               {site.business_name?.[0]?.toUpperCase() || 'S'}
             </div>
-            <span style={styles.tableSiteName}>{site.business_name || 'Untitled Site'}</span>
+            <span style={{...styles.tableSiteName, ...(isDarkMode && { color: '#e5e5e5' })}}>{site.business_name || 'Untitled Site'}</span>
           </div>
         </td>
         <td style={styles.tableCell}>

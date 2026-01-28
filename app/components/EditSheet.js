@@ -51,7 +51,8 @@ export default function EditSheet({
   editsRemaining,
   onEditComplete,
   onLimitReached,
-  language = 'en'
+  language = 'en',
+  isDarkMode = false
 }) {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
@@ -185,6 +186,7 @@ export default function EditSheet({
         ref={sheetRef}
         style={{
           ...styles.sheet,
+          ...(isDarkMode && styles.sheetDark),
           transform: isOpen ? `translateY(${dragOffset}px)` : 'translateY(100%)',
           height: sheetHeight,
         }}
@@ -199,17 +201,17 @@ export default function EditSheet({
           onMouseMove={handleDrag}
           onMouseUp={handleDragEnd}
         >
-          <div style={styles.dragHandle} />
+          <div style={{...styles.dragHandle, ...(isDarkMode && styles.dragHandleDark)}} />
         </div>
 
         {/* Header */}
-        <div style={styles.header}>
+        <div style={{...styles.header, ...(isDarkMode && styles.headerDark)}}>
           <div style={styles.headerLeft}>
-            <span style={styles.editsSubtitle}>
+            <span style={{...styles.editsSubtitle, ...(isDarkMode && styles.editsSubtitleDark)}}>
               {t.editsRemaining(editsRemaining)}
             </span>
           </div>
-          <button onClick={onClose} style={styles.minimizeButton}>
+          <button onClick={onClose} style={{...styles.minimizeButton, ...(isDarkMode && styles.minimizeButtonDark)}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 14l-7 7-7-7" />
             </svg>
@@ -220,22 +222,22 @@ export default function EditSheet({
         <div style={styles.messages}>
           {messages.length === 0 && (
             <div style={styles.emptyState}>
-              <p style={styles.emptyTitle}>{t.whatToChange}</p>
+              <p style={{...styles.emptyTitle, ...(isDarkMode && styles.emptyTitleDark)}}>{t.whatToChange}</p>
               <div style={styles.exampleChips}>
                 <button
-                  style={styles.chip}
+                  style={{...styles.chip, ...(isDarkMode && styles.chipDark)}}
                   onClick={() => setInputValue(language === 'es' ? 'Cambiar el teléfono' : 'Change the phone number')}
                 >
                   {t.changePhone}
                 </button>
                 <button
-                  style={styles.chip}
+                  style={{...styles.chip, ...(isDarkMode && styles.chipDark)}}
                   onClick={() => setInputValue(language === 'es' ? 'Actualizar el título' : 'Update the headline')}
                 >
                   {t.updateHeadline}
                 </button>
                 <button
-                  style={styles.chip}
+                  style={{...styles.chip, ...(isDarkMode && styles.chipDark)}}
                   onClick={() => setInputValue(language === 'es' ? 'Cambiar los colores' : 'Change the colors')}
                 >
                   {t.changeColors}
@@ -248,7 +250,7 @@ export default function EditSheet({
               key={i}
               style={{
                 ...styles.message,
-                ...(msg.role === 'user' ? styles.userMessage : styles.assistantMessage),
+                ...(msg.role === 'user' ? styles.userMessage : {...styles.assistantMessage, ...(isDarkMode && styles.assistantMessageDark)}),
                 ...(msg.error ? styles.errorMessage : {}),
                 ...(msg.success ? styles.successMessage : {})
               }}
@@ -260,7 +262,7 @@ export default function EditSheet({
             </div>
           ))}
           {isLoading && (
-            <div style={{ ...styles.message, ...styles.assistantMessage }}>
+            <div style={{ ...styles.message, ...styles.assistantMessage, ...(isDarkMode && styles.assistantMessageDark) }}>
               {t.loadingStatuses[loadingStatusIndex]}
             </div>
           )}
@@ -268,14 +270,14 @@ export default function EditSheet({
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} style={styles.inputForm}>
+        <form onSubmit={handleSubmit} style={{...styles.inputForm, ...(isDarkMode && styles.inputFormDark)}}>
           <input
             ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={t.describeEdit}
-            style={styles.input}
+            style={{...styles.input, ...(isDarkMode && styles.inputDark)}}
             disabled={isLoading}
           />
           <button
@@ -458,5 +460,40 @@ const styles = {
     justifyContent: 'center',
     flexShrink: 0,
     transition: 'opacity 0.2s',
+  },
+  // Dark mode variants
+  sheetDark: {
+    background: '#111111',
+  },
+  dragHandleDark: {
+    background: '#4b5563',
+  },
+  headerDark: {
+    borderBottom: '1px solid #2a2a2a',
+  },
+  editsSubtitleDark: {
+    color: '#9ca3af',
+  },
+  minimizeButtonDark: {
+    color: '#9ca3af',
+  },
+  emptyTitleDark: {
+    color: '#e5e5e5',
+  },
+  chipDark: {
+    background: '#1f1f1f',
+    color: '#9ca3af',
+  },
+  assistantMessageDark: {
+    background: '#1f1f1f',
+    color: '#e5e5e5',
+  },
+  inputFormDark: {
+    borderTop: '1px solid #2a2a2a',
+  },
+  inputDark: {
+    background: '#1a1a1a',
+    border: '1px solid #2a2a2a',
+    color: '#e5e5e5',
   },
 }

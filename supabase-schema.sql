@@ -224,3 +224,16 @@ CREATE POLICY "Allow public inserts to designer_requests" ON designer_requests
   FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow reading designer_requests" ON designer_requests
   FOR SELECT USING (true);
+
+-- =============================================
+-- MIGRATION: Multi-language Support
+-- Spanish version of HTML for bilingual websites
+-- =============================================
+
+-- Store Spanish version of HTML (generated on-demand when user first toggles to Spanish)
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  html_code_es TEXT;
+
+-- Owner's preferred language for UI and emails
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  owner_language TEXT DEFAULT 'en';

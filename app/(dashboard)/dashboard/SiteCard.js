@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import SiteSettingsModal from './SiteSettingsModal'
 
-export default function SiteCard({ site }) {
+export default function SiteCard({ site, isDarkMode = false }) {
   const [isDuplicating, setIsDuplicating] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -57,10 +57,11 @@ export default function SiteCard({ site }) {
   }
 
   return (
-    <div style={styles.card}>
+    <div style={{...styles.card, ...(isDarkMode && { background: '#111111', border: '1px solid #2a2a2a' })}}>
       <div style={{
         ...styles.cardPreview,
-        ...(isClaimed ? {} : styles.cardPreviewDraft)
+        ...(isClaimed ? {} : styles.cardPreviewDraft),
+        ...(isDarkMode && { background: '#1a1a2e' })
       }}>
         <div style={styles.previewPlaceholder}>
           {site.business_name?.[0]?.toUpperCase() || 'S'}
@@ -73,8 +74,8 @@ export default function SiteCard({ site }) {
         )}
       </div>
       <div style={styles.cardContent}>
-        <h3 style={styles.cardTitle}>{site.business_name || 'Untitled Site'}</h3>
-        <p style={styles.cardSubdomain}>
+        <h3 style={{...styles.cardTitle, ...(isDarkMode && { color: '#e5e5e5' })}}>{site.business_name || 'Untitled Site'}</h3>
+        <p style={{...styles.cardSubdomain, ...(isDarkMode && { color: '#9ca3af' })}}>
           {isClaimed
             ? `${site.subdomain}.speakyour.site`
             : 'No URL assigned'

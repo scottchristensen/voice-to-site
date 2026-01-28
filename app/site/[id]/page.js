@@ -22,8 +22,10 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function SitePage({ params }) {
+export default async function SitePage({ params, searchParams }) {
   const { id } = await params
+  const resolvedSearchParams = await searchParams
+  const lang = resolvedSearchParams?.lang || 'en'
 
   const supabase = createClient(
     process.env.SUPABASE_URL,
@@ -32,7 +34,7 @@ export default async function SitePage({ params }) {
 
   const { data: site, error } = await supabase
     .from('generated_sites')
-    .select('html_code, business_name, subdomain, payment_status, subscription_status')
+    .select('html_code, html_code_es, business_name, subdomain, payment_status, subscription_status')
     .eq('id', id)
     .single()
 
@@ -181,6 +183,11 @@ export default async function SitePage({ params }) {
     })();
   `;
 
+  // Select the appropriate HTML based on language
+  const htmlContent = lang === 'es' && site.html_code_es
+    ? site.html_code_es
+    : site.html_code
+
   // Render the site's HTML directly with form handler
   return (
     <html>
@@ -191,7 +198,7 @@ export default async function SitePage({ params }) {
         <script dangerouslySetInnerHTML={{ __html: formHandlerScript }} />
       </head>
       <body
-        dangerouslySetInnerHTML={{ __html: site.html_code }}
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
         style={{ margin: 0, padding: 0 }}
       />
     </html>

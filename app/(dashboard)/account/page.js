@@ -6,72 +6,89 @@ export default async function AccountPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>Account Settings</h1>
-        <p style={styles.subtitle}>Manage your account information</p>
-      </div>
-
-      {/* Profile Section */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Profile</h2>
-        <div style={styles.card}>
-          <AccountForm user={user} />
+    <>
+      <style>{`
+        @media (prefers-color-scheme: dark) {
+          .account-title { color: #e5e5e5 !important; }
+          .account-subtitle { color: #999 !important; }
+          .account-section-title { color: #e5e5e5 !important; }
+          .account-card { background: #1a1a1a !important; border-color: #333 !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important; }
+          .account-label { color: #888 !important; }
+          .account-value { color: #e5e5e5 !important; }
+          .account-hint { color: #777 !important; }
+          .account-provider { color: #e5e5e5 !important; }
+          .account-danger-title { color: #e5e5e5 !important; }
+          .account-danger-text { color: #999 !important; }
+          .account-delete-btn { background: #1a1a1a !important; }
+        }
+      `}</style>
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 className="account-title" style={styles.title}>Account Settings</h1>
+          <p className="account-subtitle" style={styles.subtitle}>Manage your account information</p>
         </div>
-      </div>
 
-      {/* Email Section */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Email Address</h2>
-        <div style={styles.card}>
-          <div style={styles.infoRow}>
-            <span style={styles.label}>Email</span>
-            <span style={styles.value}>{user.email}</span>
-          </div>
-          <p style={styles.hint}>
-            {user.app_metadata?.provider === 'google'
-              ? 'Your email is managed through Google Sign-In'
-              : 'Contact support to change your email address'}
-          </p>
-        </div>
-      </div>
-
-      {/* Auth Provider Section */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Sign-In Method</h2>
-        <div style={styles.card}>
-          <div style={styles.providerRow}>
-            {user.app_metadata?.provider === 'google' ? (
-              <>
-                <GoogleIcon />
-                <span>Google Account</span>
-              </>
-            ) : (
-              <>
-                <EmailIcon />
-                <span>Email & Password</span>
-              </>
-            )}
+        {/* Profile Section */}
+        <div style={styles.section}>
+          <h2 className="account-section-title" style={styles.sectionTitle}>Profile</h2>
+          <div className="account-card" style={styles.card}>
+            <AccountForm user={user} />
           </div>
         </div>
-      </div>
 
-      {/* Danger Zone */}
-      <div style={styles.section}>
-        <h2 style={{...styles.sectionTitle, color: '#dc2626'}}>Danger Zone</h2>
-        <div style={{...styles.card, borderColor: '#fecaca'}}>
-          <div style={styles.dangerRow}>
-            <div>
-              <h4 style={styles.dangerTitle}>Delete Account</h4>
-              <p style={styles.dangerText}>
-                Permanently delete your account and all associated data. This action cannot be undone.
-              </p>
+        {/* Email Section */}
+        <div style={styles.section}>
+          <h2 className="account-section-title" style={styles.sectionTitle}>Email Address</h2>
+          <div className="account-card" style={styles.card}>
+            <div style={styles.infoRow}>
+              <span className="account-label" style={styles.label}>Email</span>
+              <span className="account-value" style={styles.value}>{user.email}</span>
             </div>
-            <button style={styles.deleteButton}>Delete Account</button>
+            <p className="account-hint" style={styles.hint}>
+              {user.app_metadata?.provider === 'google'
+                ? 'Your email is managed through Google Sign-In'
+                : 'Contact support to change your email address'}
+            </p>
+          </div>
+        </div>
+
+        {/* Auth Provider Section */}
+        <div style={styles.section}>
+          <h2 className="account-section-title" style={styles.sectionTitle}>Sign-In Method</h2>
+          <div className="account-card" style={styles.card}>
+            <div className="account-provider" style={styles.providerRow}>
+              {user.app_metadata?.provider === 'google' ? (
+                <>
+                  <GoogleIcon />
+                  <span>Google Account</span>
+                </>
+              ) : (
+                <>
+                  <EmailIcon />
+                  <span>Email & Password</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Danger Zone */}
+        <div style={styles.section}>
+          <h2 style={{...styles.sectionTitle, color: '#dc2626'}}>Danger Zone</h2>
+          <div className="account-card" style={{...styles.card, borderColor: '#fecaca'}}>
+            <div style={styles.dangerRow}>
+              <div>
+                <h4 className="account-danger-title" style={styles.dangerTitle}>Delete Account</h4>
+                <p className="account-danger-text" style={styles.dangerText}>
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+              </div>
+              <button className="account-delete-btn" style={styles.deleteButton}>Delete Account</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
