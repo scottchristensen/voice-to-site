@@ -18,11 +18,14 @@ const translations = {
     error: 'Something went wrong. Please try again.',
     networkError: 'Network error. Please try again.',
     loadingStatuses: [
-      'Analyzing your request...',
-      'Updating your site...',
-      'Applying changes...',
-      'Almost there...',
-      'Polishing details...',
+      'Reading your mind... 🔮',
+      'Waking up the design elves...',
+      'Shuffling pixels around...',
+      'Consulting the style guide...',
+      'Making it look just right...',
+      'Adding a sprinkle of magic ✨',
+      'Almost there, promise!',
+      'Final touches incoming...',
     ],
   },
   es: {
@@ -39,11 +42,14 @@ const translations = {
     error: 'Algo salió mal. Por favor intenta de nuevo.',
     networkError: 'Error de red. Por favor intenta de nuevo.',
     loadingStatuses: [
-      'Analizando tu solicitud...',
-      'Actualizando tu sitio...',
-      'Aplicando cambios...',
-      'Casi listo...',
-      'Puliendo detalles...',
+      'Leyendo tu mente... 🔮',
+      'Despertando a los duendes del diseño...',
+      'Moviendo píxeles...',
+      'Consultando la guía de estilo...',
+      'Haciéndolo perfecto...',
+      'Añadiendo un toque de magia ✨',
+      '¡Ya casi, lo prometemos!',
+      'Últimos retoques...',
     ],
   }
 }
@@ -87,7 +93,7 @@ export default function EditPanel({
     }
     const interval = setInterval(() => {
       setLoadingStatusIndex(prev => (prev + 1) % t.loadingStatuses.length)
-    }, 2500)
+    }, 2000)
     return () => clearInterval(interval)
   }, [isLoading, t.loadingStatuses.length])
 
@@ -203,8 +209,13 @@ export default function EditPanel({
           </div>
         ))}
         {isLoading && (
-          <div style={{ ...styles.message, ...styles.assistantMessage, ...(isDarkMode && styles.assistantMessageDark) }}>
-            {t.loadingStatuses[loadingStatusIndex]}
+          <div style={{
+            ...styles.message,
+            ...styles.assistantMessage,
+            ...styles.loadingMessage,
+            ...(isDarkMode && { ...styles.assistantMessageDark, ...styles.loadingMessageDark })
+          }}>
+            <span className="loading-status-text">{t.loadingStatuses[loadingStatusIndex]}</span>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -244,6 +255,18 @@ export default function EditPanel({
         .loading-dots span:nth-child(1) { animation: blink 1.4s infinite 0s; }
         .loading-dots span:nth-child(2) { animation: blink 1.4s infinite 0.2s; }
         .loading-dots span:nth-child(3) { animation: blink 1.4s infinite 0.4s; }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        .loading-status-text {
+          display: inline-block;
+          animation: fadeIn 0.3s ease-out, pulse 2s ease-in-out infinite;
+        }
       `}</style>
     </div>
   )
@@ -362,6 +385,10 @@ const styles = {
     background: '#fef2f2',
     color: '#dc2626',
   },
+  loadingMessage: {
+    background: 'linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%)',
+    border: '1px solid #c7d2fe',
+  },
   checkmark: {
     marginRight: '6px',
     fontWeight: '600',
@@ -424,6 +451,10 @@ const styles = {
   assistantMessageDark: {
     background: '#1f1f1f',
     color: '#e5e5e5',
+  },
+  loadingMessageDark: {
+    background: 'linear-gradient(135deg, #1e1b4b 0%, #1e1b4b 100%)',
+    border: '1px solid #3730a3',
   },
   inputFormDark: {
     borderTop: '1px solid #2a2a2a',
