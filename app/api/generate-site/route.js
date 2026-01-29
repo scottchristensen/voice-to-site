@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 // Force dynamic rendering - don't pre-render at build time
 export const dynamic = 'force-dynamic'
 
+// Import address processing functions
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY
+
 export async function POST(request) {
   try {
     // Initialize Supabase
@@ -69,8 +72,35 @@ export async function POST(request) {
 
     console.log('Parsed requirements:', requirements)
 
-    // Build the prompt for Gemini
-    const prompt = buildWebsitePrompt(requirements)
+    // Process address and fetch imagery if physical location is provided
+    let imagery = null
+    let geocodeData = null
+    let googlePlaceId = null
+    let googlePlaceData = null
+
+    if (requirements.hasPhysicalLocation && requirements.businessAddress && GOOGLE_MAPS_API_KEY) {
+      console.log('Processing business address for imagery...')
+      try {
+        const addressResult = await processAddressAndFetchImagery(
+          requirements.businessAddress,
+          requirements.businessName,
+          requirements.industry
+        )
+
+        if (addressResult.valid) {
+          geocodeData = addressResult.geocode
+          googlePlaceId = addressResult.place?.placeId
+          googlePlaceData = addressResult.place
+          imagery = addressResult.imagery
+          console.log(`Imagery fetched: source=${imagery.source}, photos=${imagery.photos?.length || 0}`)
+        }
+      } catch (err) {
+        console.error('Address processing failed, continuing with placeholders:', err)
+      }
+    }
+
+    // Build the prompt for Gemini (with imagery if available)
+    const prompt = buildWebsitePrompt(requirements, imagery)
 
     // Call Gemini 2.0 Flash (faster, fits within Vercel's 10s timeout)
     // Note: Upgrade to Vercel Pro for 60s timeout to use Gemini 3 Pro
@@ -118,7 +148,12 @@ export async function POST(request) {
         edit_passphrase: editPassphrase,
         // Address and location fields
         has_physical_location: requirements.hasPhysicalLocation || false,
-        business_address: requirements.businessAddress || null
+        business_address: requirements.businessAddress || null,
+        // Geocoding and Places data
+        geocode_data: geocodeData,
+        google_place_id: googlePlaceId,
+        google_place_data: googlePlaceData,
+        business_imagery: imagery
       })
       .select()
       .single()
@@ -186,7 +221,7 @@ export async function POST(request) {
 }
 
 // This function builds a detailed prompt for Gemini
-function buildWebsitePrompt(requirements) {
+function buildWebsitePrompt(requirements, imagery = null) {
   // Build location section if address is provided
   let locationSection = ''
   if (requirements.hasPhysicalLocation && requirements.businessAddress) {
@@ -211,6 +246,9 @@ BUSINESS TYPE:
 `
   }
 
+  // Build imagery instructions based on what's available
+  const imagerySection = buildImageryInstructions(imagery, requirements.businessName)
+
   return `Create a complete, production-ready single-page marketing website.
 
 BUSINESS DETAILS:
@@ -225,7 +263,7 @@ BUSINESS DETAILS:
 ${locationSection}
 ADDITIONAL DETAILS:
 ${requirements.additionalInfo || 'None provided'}
-
+${imagerySection}
 CRITICAL REQUIREMENTS:
 1. This MUST be a SINGLE-PAGE landing page - NO multi-page navigation, NO links to other pages
 2. ALL navigation links MUST be anchor links (e.g., href="#about", href="#services", href="#contact") that scroll within the same page
@@ -242,7 +280,7 @@ DESIGN REQUIREMENTS:
    - Features/Benefits section (id="features")
    - Testimonials section (id="testimonials") with realistic placeholder text
    - Contact form section (id="contact") with a working form layout
-9. Use placeholder images from https://placehold.co (e.g., https://placehold.co/600x400/1a1a2e/ffffff?text=Hero+Image)
+9. Follow the IMAGE REQUIREMENTS section above for which images to use
 10. Include smooth scroll behavior: html { scroll-behavior: smooth; }
 11. Make the color scheme match: ${requirements.colorPreference || 'professional blue'} - use a cohesive palette for BOTH light and dark modes
 12. Add subtle hover animations and transitions for polish
@@ -298,4 +336,268 @@ function generatePassphrase() {
   const num = Math.floor(10 + Math.random() * 90) // 10-99
 
   return `${adj}-${noun}-${num}`
+}
+
+/**
+ * Build imagery instructions for the Gemini prompt
+ */
+function buildImageryInstructions(imagery, businessName) {
+  // Default to placeholders if no imagery available
+  if (!imagery || imagery.source === 'placeholder') {
+    return `
+IMAGE REQUIREMENTS:
+- Use placeholder images from https://placehold.co
+- Example: https://placehold.co/600x400/1a1a2e/ffffff?text=Hero+Image
+- Use descriptive text in placeholder URLs that match the section (e.g., ?text=Our+Services)
+`
+  }
+
+  let instructions = `
+IMAGE REQUIREMENTS:
+`
+
+  // If we have real business photos from Google Places
+  if (imagery.photos && imagery.photos.length > 0) {
+    instructions += `
+USE THESE REAL BUSINESS PHOTOS (use them in order of preference):
+${imagery.photos.map((photo, i) => `${i + 1}. ${photo.url}`).join('\n')}
+
+IMPORTANT PHOTO INSTRUCTIONS:
+- Use photo #1 as the HERO IMAGE (make it full-width, prominent at the top)
+- Use remaining photos in the About, Services, or Gallery sections
+- Add descriptive alt text for each image (describe the business)
+- Make sure images are responsive (max-width: 100%, height: auto)
+`
+  }
+
+  // If we have Street View imagery
+  if (imagery.streetView) {
+    instructions += `
+STREET VIEW IMAGE (shows the actual storefront/building):
+- URL: ${imagery.streetView.url}
+- Use this in a "Visit Us" or "Location" section to show the physical storefront
+- This helps customers recognize the business when they arrive
+`
+  }
+
+  // Map image for contact/location section
+  if (imagery.mapImage) {
+    instructions += `
+MAP IMAGE (for Contact/Location section):
+- URL: ${imagery.mapImage}
+- Include this map image in the Contact section
+- Add a "Get Directions" button/link next to or below the map
+`
+  }
+
+  // If we still need some placeholders
+  if (imagery.photos?.length < 3) {
+    instructions += `
+For any additional images needed beyond the real photos provided, use placeholders:
+- https://placehold.co/400x300/667eea/ffffff?text=Our+Services
+- https://placehold.co/400x300/667eea/ffffff?text=Quality+Work
+`
+  }
+
+  return instructions
+}
+
+/**
+ * Process address and fetch all business imagery
+ */
+async function processAddressAndFetchImagery(businessAddress, businessName, industry) {
+  const fullAddress = businessAddress.fullAddress ||
+    `${businessAddress.street || ''}, ${businessAddress.city || ''}, ${businessAddress.state || ''} ${businessAddress.zip || ''}`.trim()
+
+  // Step 1: Geocode the address
+  const geocodeResult = await geocodeAddress(fullAddress)
+
+  if (!geocodeResult.valid) {
+    return {
+      valid: false,
+      error: geocodeResult.error,
+      geocode: null,
+      place: null,
+      imagery: null
+    }
+  }
+
+  // Step 2: Find the business on Google Places
+  const placeResult = await findBusinessPlace(businessName, geocodeResult.location)
+
+  // Step 3: Determine if this is a storefront business
+  const hasStorefront = isStorefrontBusiness(industry)
+
+  // Step 4: Fetch all imagery
+  const imagery = await fetchBusinessImagery({
+    placeId: placeResult?.placeId,
+    location: geocodeResult.location,
+    hasStorefront,
+    businessName
+  })
+
+  return {
+    valid: true,
+    geocode: geocodeResult,
+    place: placeResult,
+    imagery
+  }
+}
+
+/**
+ * Geocode an address using Google Geocoding API
+ */
+async function geocodeAddress(address) {
+  try {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?` +
+      `address=${encodeURIComponent(address)}` +
+      `&key=${GOOGLE_MAPS_API_KEY}`
+
+    const response = await fetch(url)
+    const data = await response.json()
+
+    if (data.status !== 'OK' || !data.results[0]) {
+      return {
+        valid: false,
+        error: data.status === 'ZERO_RESULTS' ? 'Address not found' : `Geocoding error: ${data.status}`
+      }
+    }
+
+    const result = data.results[0]
+    return {
+      valid: true,
+      formattedAddress: result.formatted_address,
+      location: result.geometry.location,
+      placeId: result.place_id,
+      addressComponents: result.address_components
+    }
+  } catch (error) {
+    return { valid: false, error: error.message }
+  }
+}
+
+/**
+ * Find a business on Google Places
+ */
+async function findBusinessPlace(businessName, location) {
+  try {
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?` +
+      `location=${location.lat},${location.lng}` +
+      `&radius=150` +
+      `&keyword=${encodeURIComponent(businessName)}` +
+      `&key=${GOOGLE_MAPS_API_KEY}`
+
+    const response = await fetch(searchUrl)
+    const data = await response.json()
+
+    if (data.status !== 'OK' || !data.results[0]) {
+      return null
+    }
+
+    const place = data.results[0]
+    return {
+      placeId: place.place_id,
+      name: place.name,
+      rating: place.rating,
+      userRatingsTotal: place.user_ratings_total,
+      types: place.types,
+      vicinity: place.vicinity
+    }
+  } catch (error) {
+    return null
+  }
+}
+
+/**
+ * Check if an industry typically has a visible storefront
+ */
+function isStorefrontBusiness(industry) {
+  if (!industry) return false
+
+  const storefrontIndustries = [
+    'restaurant', 'cafe', 'bakery', 'bar', 'salon', 'barbershop', 'spa',
+    'retail', 'store', 'shop', 'boutique', 'gym', 'fitness',
+    'dental', 'medical', 'clinic', 'auto', 'mechanic',
+    'hotel', 'pharmacy', 'florist', 'pet', 'coffee', 'pizza'
+  ]
+
+  const lowercaseIndustry = industry.toLowerCase()
+  return storefrontIndustries.some(type => lowercaseIndustry.includes(type))
+}
+
+/**
+ * Fetch all business imagery (photos, map, street view)
+ */
+async function fetchBusinessImagery({ placeId, location, hasStorefront, businessName }) {
+  const imagery = {
+    photos: [],
+    mapImage: null,
+    streetView: null,
+    source: 'placeholder'
+  }
+
+  // Generate map image if we have location
+  if (location) {
+    imagery.mapImage = `https://maps.googleapis.com/maps/api/staticmap?` +
+      `center=${location.lat},${location.lng}` +
+      `&zoom=15&size=600x400&maptype=roadmap` +
+      `&markers=color:red%7C${location.lat},${location.lng}` +
+      `&key=${GOOGLE_MAPS_API_KEY}`
+  }
+
+  // Fetch business photos if we have a place ID
+  if (placeId) {
+    try {
+      const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?` +
+        `place_id=${placeId}` +
+        `&fields=photos` +
+        `&key=${GOOGLE_MAPS_API_KEY}`
+
+      const response = await fetch(detailsUrl)
+      const data = await response.json()
+
+      if (data.status === 'OK' && data.result?.photos) {
+        imagery.photos = data.result.photos.slice(0, 5).map(photo => ({
+          url: `https://maps.googleapis.com/maps/api/place/photo?` +
+            `maxwidth=800&photo_reference=${photo.photo_reference}` +
+            `&key=${GOOGLE_MAPS_API_KEY}`,
+          attribution: photo.html_attributions?.[0] || '',
+          width: photo.width,
+          height: photo.height
+        }))
+        imagery.source = 'google_places'
+      }
+    } catch (error) {
+      console.error('Photo fetch error:', error)
+    }
+  }
+
+  // Fetch Street View for storefront businesses
+  if (hasStorefront && location) {
+    try {
+      const metadataUrl = `https://maps.googleapis.com/maps/api/streetview/metadata?` +
+        `location=${location.lat},${location.lng}` +
+        `&key=${GOOGLE_MAPS_API_KEY}`
+
+      const metaResponse = await fetch(metadataUrl)
+      const metadata = await metaResponse.json()
+
+      if (metadata.status === 'OK') {
+        imagery.streetView = {
+          url: `https://maps.googleapis.com/maps/api/streetview?` +
+            `size=600x400&location=${location.lat},${location.lng}` +
+            `&pitch=10&key=${GOOGLE_MAPS_API_KEY}`,
+          panoId: metadata.pano_id,
+          date: metadata.date
+        }
+        if (imagery.photos.length === 0) {
+          imagery.source = 'street_view'
+        }
+      }
+    } catch (error) {
+      console.error('Street View error:', error)
+    }
+  }
+
+  return imagery
 }
