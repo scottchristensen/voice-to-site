@@ -237,3 +237,52 @@ ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
 -- Owner's preferred language for UI and emails
 ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
   owner_language TEXT DEFAULT 'en';
+
+-- =============================================
+-- MIGRATION: Business Address & Location Imagery
+-- Enables collecting physical addresses and fetching
+-- Google Maps/Places/Street View imagery
+-- =============================================
+
+-- Whether the business has a physical location customers can visit
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  has_physical_location BOOLEAN DEFAULT false;
+
+-- Business address as structured JSONB
+-- Structure: { street, city, state, zip, fullAddress, formattedAddress }
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  business_address JSONB;
+
+-- Geocoding results from Google Geocoding API
+-- Structure: { lat, lng, placeId, addressComponents }
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  geocode_data JSONB;
+
+-- Google Place ID for the business (from Places API)
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  google_place_id TEXT;
+
+-- Additional Google Places data
+-- Structure: { name, rating, userRatingsTotal, types, vicinity }
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  google_place_data JSONB;
+
+-- Imagery URLs fetched from Google APIs
+-- Structure: {
+--   photos: [{ url, attribution, width, height }],
+--   mapImage: "static map url",
+--   streetView: { url, panoId, date },
+--   source: "google_places" | "street_view" | "placeholder"
+-- }
+ALTER TABLE generated_sites ADD COLUMN IF NOT EXISTS
+  business_imagery JSONB;
+
+-- Index for filtering sites with physical locations
+CREATE INDEX IF NOT EXISTS idx_generated_sites_has_location
+ON generated_sites(has_physical_location)
+WHERE has_physical_location = true;
+
+-- Index for Google Place ID lookups (for refreshing imagery)
+CREATE INDEX IF NOT EXISTS idx_generated_sites_google_place
+ON generated_sites(google_place_id)
+WHERE google_place_id IS NOT NULL;
