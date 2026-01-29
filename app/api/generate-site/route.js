@@ -113,8 +113,10 @@ export async function POST(request) {
     })
 
     console.log('Calling Gemini to generate website...')
+    const geminiStart = Date.now()
     const result = await model.generateContent(prompt)
     const htmlCode = result.response.text()
+    console.log(`⏱️ Gemini generation took ${Date.now() - geminiStart}ms`)
 
     // Clean up the response (remove markdown code blocks if present)
     const cleanedHtml = htmlCode
@@ -404,13 +406,18 @@ For any additional images needed beyond the real photos provided, use placeholde
 
 /**
  * Process address and fetch all business imagery
+ * Optimized: Geocode first (required), then Places + Imagery in parallel
  */
 async function processAddressAndFetchImagery(businessAddress, businessName, industry) {
+  const startTime = Date.now()
+
   const fullAddress = businessAddress.fullAddress ||
     `${businessAddress.street || ''}, ${businessAddress.city || ''}, ${businessAddress.state || ''} ${businessAddress.zip || ''}`.trim()
 
-  // Step 1: Geocode the address
+  // Step 1: Geocode the address (must complete first)
+  const geocodeStart = Date.now()
   const geocodeResult = await geocodeAddress(fullAddress)
+  console.log(`⏱️ Geocoding took ${Date.now() - geocodeStart}ms`)
 
   if (!geocodeResult.valid) {
     return {
@@ -422,19 +429,25 @@ async function processAddressAndFetchImagery(businessAddress, businessName, indu
     }
   }
 
-  // Step 2: Find the business on Google Places
-  const placeResult = await findBusinessPlace(businessName, geocodeResult.location)
-
-  // Step 3: Determine if this is a storefront business
+  // Step 2 & 3: Run Places search and determine storefront type
   const hasStorefront = isStorefrontBusiness(industry)
 
-  // Step 4: Fetch all imagery
+  // Step 4: Find business AND fetch imagery in parallel where possible
+  const placesStart = Date.now()
+  const placeResult = await findBusinessPlace(businessName, geocodeResult.location)
+  console.log(`⏱️ Places search took ${Date.now() - placesStart}ms`)
+
+  // Step 5: Fetch all imagery (photos + street view run in parallel)
+  const imageryStart = Date.now()
   const imagery = await fetchBusinessImagery({
     placeId: placeResult?.placeId,
     location: geocodeResult.location,
     hasStorefront,
     businessName
   })
+  console.log(`⏱️ Imagery fetch took ${Date.now() - imageryStart}ms`)
+
+  console.log(`⏱️ Total address processing: ${Date.now() - startTime}ms`)
 
   return {
     valid: true,
@@ -527,6 +540,7 @@ function isStorefrontBusiness(industry) {
 
 /**
  * Fetch all business imagery (photos, map, street view)
+ * Runs photo and street view fetches in PARALLEL for speed
  */
 async function fetchBusinessImagery({ placeId, location, hasStorefront, businessName }) {
   const imagery = {
@@ -536,7 +550,7 @@ async function fetchBusinessImagery({ placeId, location, hasStorefront, business
     source: 'placeholder'
   }
 
-  // Generate map image if we have location
+  // Generate map image URL (no API call needed - just URL construction)
   if (location) {
     imagery.mapImage = `https://maps.googleapis.com/maps/api/staticmap?` +
       `center=${location.lat},${location.lng}` +
@@ -545,58 +559,84 @@ async function fetchBusinessImagery({ placeId, location, hasStorefront, business
       `&key=${GOOGLE_MAPS_API_KEY}`
   }
 
-  // Fetch business photos if we have a place ID
+  // Run photo fetch and street view fetch in PARALLEL
+  const promises = []
+
+  // Promise for business photos
   if (placeId) {
-    try {
-      const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?` +
-        `place_id=${placeId}` +
-        `&fields=photos` +
-        `&key=${GOOGLE_MAPS_API_KEY}`
+    promises.push(
+      (async () => {
+        try {
+          const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?` +
+            `place_id=${placeId}` +
+            `&fields=photos` +
+            `&key=${GOOGLE_MAPS_API_KEY}`
 
-      const response = await fetch(detailsUrl)
-      const data = await response.json()
+          const response = await fetch(detailsUrl)
+          const data = await response.json()
 
-      if (data.status === 'OK' && data.result?.photos) {
-        imagery.photos = data.result.photos.slice(0, 5).map(photo => ({
-          url: `https://maps.googleapis.com/maps/api/place/photo?` +
-            `maxwidth=800&photo_reference=${photo.photo_reference}` +
-            `&key=${GOOGLE_MAPS_API_KEY}`,
-          attribution: photo.html_attributions?.[0] || '',
-          width: photo.width,
-          height: photo.height
-        }))
-        imagery.source = 'google_places'
-      }
-    } catch (error) {
-      console.error('Photo fetch error:', error)
-    }
+          if (data.status === 'OK' && data.result?.photos) {
+            return data.result.photos.slice(0, 5).map(photo => ({
+              url: `https://maps.googleapis.com/maps/api/place/photo?` +
+                `maxwidth=800&photo_reference=${photo.photo_reference}` +
+                `&key=${GOOGLE_MAPS_API_KEY}`,
+              attribution: photo.html_attributions?.[0] || '',
+              width: photo.width,
+              height: photo.height
+            }))
+          }
+        } catch (error) {
+          console.error('Photo fetch error:', error)
+        }
+        return []
+      })()
+    )
+  } else {
+    promises.push(Promise.resolve([]))
   }
 
-  // Fetch Street View for storefront businesses
+  // Promise for Street View
   if (hasStorefront && location) {
-    try {
-      const metadataUrl = `https://maps.googleapis.com/maps/api/streetview/metadata?` +
-        `location=${location.lat},${location.lng}` +
-        `&key=${GOOGLE_MAPS_API_KEY}`
+    promises.push(
+      (async () => {
+        try {
+          const metadataUrl = `https://maps.googleapis.com/maps/api/streetview/metadata?` +
+            `location=${location.lat},${location.lng}` +
+            `&key=${GOOGLE_MAPS_API_KEY}`
 
-      const metaResponse = await fetch(metadataUrl)
-      const metadata = await metaResponse.json()
+          const metaResponse = await fetch(metadataUrl)
+          const metadata = await metaResponse.json()
 
-      if (metadata.status === 'OK') {
-        imagery.streetView = {
-          url: `https://maps.googleapis.com/maps/api/streetview?` +
-            `size=600x400&location=${location.lat},${location.lng}` +
-            `&pitch=10&key=${GOOGLE_MAPS_API_KEY}`,
-          panoId: metadata.pano_id,
-          date: metadata.date
+          if (metadata.status === 'OK') {
+            return {
+              url: `https://maps.googleapis.com/maps/api/streetview?` +
+                `size=600x400&location=${location.lat},${location.lng}` +
+                `&pitch=10&key=${GOOGLE_MAPS_API_KEY}`,
+              panoId: metadata.pano_id,
+              date: metadata.date
+            }
+          }
+        } catch (error) {
+          console.error('Street View error:', error)
         }
-        if (imagery.photos.length === 0) {
-          imagery.source = 'street_view'
-        }
-      }
-    } catch (error) {
-      console.error('Street View error:', error)
-    }
+        return null
+      })()
+    )
+  } else {
+    promises.push(Promise.resolve(null))
+  }
+
+  // Wait for both in parallel
+  const [photos, streetView] = await Promise.all(promises)
+
+  imagery.photos = photos
+  imagery.streetView = streetView
+
+  // Determine source
+  if (imagery.photos.length > 0) {
+    imagery.source = 'google_places'
+  } else if (imagery.streetView) {
+    imagery.source = 'street_view'
   }
 
   return imagery
